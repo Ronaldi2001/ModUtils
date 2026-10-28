@@ -15,12 +15,13 @@ import java.util.UUID;
  * The Bukkit API calls that differ between Paper and Spigot, as Spigot has them. The Paper adapters have a file with the
  * same path (paper/adapter) that does the same with Paper's own calls.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class ServerApi {
 	private ServerApi() {
 	}
 
 	/** Spigot only has the locale as a string, like {@code en_us}. */
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings({"deprecation", "ConstantConditions"}) // Spigot can hand out a null locale
 	public static Locale locale(Player player) {
 		String tag = player.getLocale();
 		return tag == null || tag.isEmpty() ? Locale.US : Locale.forLanguageTag(tag.replace('_', '-'));

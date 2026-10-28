@@ -6,6 +6,7 @@ import io.papermc.paper.adventure.PaperAdventure;
  * Converts between Adventure's components and Minecraft's. Paper has a converter of its own; Bukkit servers do not, and
  * have an AdventureBridge of their own (bukkit/adapter) that goes through JSON instead.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class AdventureBridge {
 	private AdventureBridge() {
 	}

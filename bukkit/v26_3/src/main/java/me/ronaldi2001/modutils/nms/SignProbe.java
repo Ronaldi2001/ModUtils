@@ -24,6 +24,7 @@ import java.util.List;
  * The Paper adapters have a file with the same path (paper/adapter) that uses Paper's API. This is the form of 26.3, where
  * SignText changed; the other versions use bukkit/adapter.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class SignProbe {
 	private SignProbe() {
 	}

@@ -13,6 +13,7 @@ import net.minecraft.world.phys.BlockHitResult;
  * The few Minecraft calls whose signature differs between versions. This is the version used by 1.21.11 to 26.2; an
  * adapter whose version needs something else has its own copy of this file (same path, in its module's src/main/java).
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class VersionShim {
 	private VersionShim() {
 	}

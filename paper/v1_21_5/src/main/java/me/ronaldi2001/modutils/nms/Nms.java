@@ -48,6 +48,7 @@ import java.util.stream.Stream;
  * The Minecraft calls that changed between versions, as they are in 1.21.5. Unlike the newest form (common), this is a
  * complete copy: the older versions do not stack on each other.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class Nms {
 	private Nms() {
 	}
@@ -93,11 +94,13 @@ public final class Nms {
 		return ingredient.isEmpty();
 	}
 
+	@SuppressWarnings("deprecation") // kept for the versions that have no replacement
 	public static Stream<Holder<Item>> items(Ingredient ingredient) {
 		return ingredient.items();
 	}
 
 	/** The base ingredient of a smithing recipe, or null if it has none (it is optional before 1.21.5). */
+	@SuppressWarnings("ConstantConditions") // optional before 1.21.5, so the shared signature is nullable
 	public static @Nullable Ingredient smithingBase(SmithingTransformRecipe recipe) {
 		return recipe.baseIngredient();
 	}
@@ -173,6 +176,7 @@ public final class Nms {
 	 * The stacks an ingredient takes if it matches items by their components (Paper's exact choice, which is how plugins
 	 * make a recipe take a custom item), or null for an ingredient that is a plain set of items.
 	 */
+	@SuppressWarnings("ConstantConditions") // a Set or a List, nullable on some versions
 	public static @Nullable List<ItemStack> exactStacks(Ingredient ingredient) {
 		if (!ingredient.isExact()) return null;
 
@@ -243,6 +247,7 @@ public final class Nms {
 	 * The packet with other stacks. Its click type is a different class from 26.1 on, so it is copied over as the packet's
 	 * record components, without naming it.
 	 */
+	@SuppressWarnings("JavaReflectionMemberAccess") // the packet is copied by its record components
 	private static Object withStacks(net.minecraft.network.protocol.game.ServerboundContainerClickPacket packet,
 									 it.unimi.dsi.fastutil.ints.Int2ObjectMap<net.minecraft.network.HashedStack> slots,
 									 net.minecraft.network.HashedStack carried) {
@@ -264,12 +269,7 @@ public final class Nms {
 
 	private static net.minecraft.network.HashedStack markerTolerant(net.minecraft.network.HashedStack hash, UnaryOperator<ItemStack> tag) {
 		if (hash == net.minecraft.network.HashedStack.EMPTY) return hash;
-		return new net.minecraft.network.HashedStack() {
-			@Override
-			public boolean matches(ItemStack stack, net.minecraft.network.HashedPatchMap.HashGenerator hasher) {
-				return hash.matches(stack, hasher) || hash.matches(tag.apply(stack), hasher);
-			}
-		};
+		return (stack, hasher) -> hash.matches(stack, hasher) || hash.matches(tag.apply(stack), hasher);
 	}
 
 	// ------------------------------------------------------------------ JEI recipe sync

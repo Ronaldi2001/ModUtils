@@ -13,6 +13,7 @@ import org.bukkit.craftbukkit.CraftServer;
  * A Bukkit server has no PaperAdventure, so a component goes through its JSON form, which both
  * sides read and write.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class AdventureBridge {
 	private AdventureBridge() {
 	}

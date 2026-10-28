@@ -31,6 +31,7 @@ import java.util.logging.Level;
  * <p>
  * The Paper adapters have a file with the same path (paper/adapter) that uses Paper's event instead.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class ConfigurePhase {
 	private static final String ACCEPTOR_NAME = "modutils_acceptor";
 	private static final String PROBE_NAME = "modutils_configure_probe";
@@ -72,6 +73,7 @@ public final class ConfigurePhase {
 		if (HANDLERS.isEmpty()) uninject();
 	}
 
+	@SuppressWarnings("ConstantConditions") // the connection is null until the server is up
 	private static void inject(ModUtilsPlugin plugin) {
 		try {
 			ServerConnectionListener listener = MinecraftServer.getServer().getConnection();
@@ -97,6 +99,7 @@ public final class ConfigurePhase {
 		}
 	}
 
+	@SuppressWarnings("resource") // the event loops belong to Netty
 	private static void uninject() {
 		for (Channel channel : LISTENING) {
 			channel.eventLoop().execute(() -> {
@@ -112,7 +115,7 @@ public final class ConfigurePhase {
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) {
 			if (msg instanceof Channel child) {
-				child.pipeline().addLast(new ChannelInitializer<Channel>() {
+				child.pipeline().addLast(new ChannelInitializer<>() {
 					@Override
 					protected void initChannel(Channel channel) {
 						channel.pipeline().addLast(new Installer());
@@ -140,7 +143,8 @@ public final class ConfigurePhase {
 		private boolean done;
 
 		@Override
-		public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+		@SuppressWarnings("resource") // the event loop belongs to Netty
+		public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
 			if (!this.done && ctx.pipeline().get("packet_handler") instanceof Connection connection) {
 				PacketListener listener = connection.getPacketListener();
 				if (listener instanceof ServerConfigurationPacketListenerImpl configuration) {

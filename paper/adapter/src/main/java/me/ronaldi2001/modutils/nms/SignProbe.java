@@ -16,6 +16,7 @@ import java.util.List;
  * Shows a player a sign with the given translatable lines, which only exists on their client. Paper writes the sign data
  * itself, in the form this version wants. The Bukkit adapters have a file with the same path (bukkit/adapter).
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class SignProbe {
 	private SignProbe() {
 	}

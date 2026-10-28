@@ -14,6 +14,7 @@ import java.lang.reflect.Modifier;
  * Finds the Netty channel behind a player or a connection in its configuration phase, to put handlers in its pipeline.
  * The fields are found by their Mojang names, which is what Paper runs on. The Bukkit adapters look them up by type.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class Connections {
 	private Connections() {
 	}

@@ -44,8 +44,6 @@ java {
 // The files Paper does its own way (paper/adapter) are checked here with the rest. The Bukkit ones are in bukkit:adapter.
 sourceSets.main {
     java.srcDir(rootProject.file("paper/adapter/src/main/java"))
-    // The Jade of 1.20.5 and 1.20.6 clients is written against that Minecraft, not against the one checked here
-    java.exclude("**/Jade1205Compat.java")
 }
 
 tasks.withType<JavaCompile>().configureEach {

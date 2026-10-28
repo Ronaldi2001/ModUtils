@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
  * every version up to 1.21.11), a plain holder in 26.x and there is none in 1.20.6: those adapters have their own copy
  * of this file (same path, in their module's src/main/java).
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class JukeboxNames {
 	private JukeboxNames() {
 	}

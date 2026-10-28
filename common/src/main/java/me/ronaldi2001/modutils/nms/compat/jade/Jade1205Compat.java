@@ -13,6 +13,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
@@ -51,6 +52,7 @@ import java.util.function.Consumer;
  * {@code jade:receive_data} compound tag. The providers keep their data in plain NBT keys, where the newer Jade has
  * them write a binary stream under the provider's id, so they are written here rather than shared.
  */
+@SuppressWarnings("resource") // ServerLevel is closeable, but it belongs to the server
 public class Jade1205Compat extends Jade121Compat {
 	private static final String SERVER_PING = "jade:server_ping";
 	/**
@@ -93,7 +95,6 @@ public class Jade1205Compat extends Jade121Compat {
 	}
 
 	@Override
-	@SuppressWarnings("resource") // ServerLevel is closeable, but it belongs to the server
 	protected void clientReady(Player player, ServerPlayer handle, String channel) {
 		if (!SERVER_PING.equals(channel)) {
 			super.clientReady(player, handle, channel);
@@ -156,7 +157,7 @@ public class Jade1205Compat extends Jade121Compat {
 
 		RegistryAccess registries = ctx.level().registryAccess();
 		ListTag items = new ListTag();
-		for (int i = 0; i < 3; i++) items.add(furnace.getItem(i).saveOptional(registries));
+		for (int i = 0; i < 3; i++) items.add(save(registries, furnace.getItem(i)));
 		ctx.tag().put("furnace", items);
 		ctx.tag().putInt("progress", state.getCookTime());
 		ctx.tag().putInt("total", state.getCookTimeTotal());
@@ -182,7 +183,7 @@ public class Jade1205Compat extends Jade121Compat {
 		if (!(ctx.blockEntity() instanceof JukeboxBlockEntity jukebox) || !ctx.state().getValue(JukeboxBlock.HAS_RECORD)) return;
 
 		ItemStack record = jukebox.getTheItem();
-		if (!record.isEmpty()) ctx.tag().put("record", record.save(ctx.level().registryAccess()));
+		if (!record.isEmpty()) ctx.tag().put("record", save(ctx.level().registryAccess(), record));
 	}
 
 	private void blockStorage(BlockCtx ctx) {
@@ -226,9 +227,9 @@ public class Jade1205Compat extends Jade121Compat {
 	}
 
 	private void mobGrowth(EntityCtx ctx) {
-		if (!(ctx.entity() instanceof AgeableMob ageable)) return;
+		if (!(ctx.entity() instanceof AgeableMob mob)) return;
 
-		int time = -ageable.getAge();
+		int time = -mob.getAge();
 		if (time > 0) ctx.tag().putInt("GrowingTime", time);
 	}
 
@@ -263,6 +264,11 @@ public class Jade1205Compat extends Jade121Compat {
 
 	// ------------------------------------------------------------------ storage
 
+	/** The stack as the server saves it in NBT: an empty one becomes an empty compound. */
+	private static Tag save(RegistryAccess registries, ItemStack stack) {
+		return ItemStack.OPTIONAL_CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), stack).result().orElseThrow();
+	}
+
 	/**
 	 * Writes the stacks as Jade 14 reads an item storage: a list with one group of views, each an item (a stack bigger
 	 * than its maximum is saved as one with the real count next to it), and the id of the extension that reads it.
@@ -273,7 +279,7 @@ public class Jade1205Compat extends Jade121Compat {
 			ItemStack stack = stacks.get(i);
 			int count = stack.getCount();
 			boolean oversized = count > stack.getMaxStackSize();
-			CompoundTag item = (CompoundTag) (oversized ? stack.copyWithCount(1) : stack).save(registries);
+			CompoundTag item = (CompoundTag) save(registries, oversized ? stack.copyWithCount(1) : stack);
 			if (oversized) item.putInt("NewCount", count);
 			views.add(item);
 		}

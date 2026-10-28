@@ -21,6 +21,7 @@ import java.util.List;
  * sign a translatable line (and no {@code sendBlockUpdate}), so the packets are built from the server's own sign text.
  * The Paper adapters have a file with the same path (paper/adapter) that uses Paper's API.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class SignProbe {
 	private SignProbe() {
 	}

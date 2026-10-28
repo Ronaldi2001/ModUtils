@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * The 26.x version of JukeboxNames: the song of a disc is a plain holder here.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class JukeboxNames {
 	private JukeboxNames() {
 	}

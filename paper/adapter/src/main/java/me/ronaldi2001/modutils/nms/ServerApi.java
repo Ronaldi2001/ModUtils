@@ -15,6 +15,7 @@ import java.util.UUID;
  * The Bukkit API calls that differ between Paper and Spigot, as Paper has them: its own, cheaper ones. The Bukkit adapters
  * have a file with the same path (bukkit/adapter) that does the same with what Spigot has.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class ServerApi {
 	private ServerApi() {
 	}

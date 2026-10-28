@@ -8,6 +8,7 @@ import java.util.UUID;
  * This Paper version does not tell plugins about connections in their configuration phase, so
  * nothing is ever called back. The compats that need it go by the join event instead.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class ConfigurePhase {
 	private ConfigurePhase() {
 	}

@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * The 1.20.6 version of JukeboxNames: music discs have no song component yet, so there is no title to find.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class JukeboxNames {
 	private JukeboxNames() {
 	}

@@ -1,22 +1,7 @@
 package me.ronaldi2001.modutils.nms;
 
-import net.minecraft.core.HolderSet;
-import net.minecraft.tags.TagKey;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.crafting.RecipeManager;
-import net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket;
 import java.util.Arrays;
 import net.minecraft.world.entity.vehicle.ContainerEntity;
-import java.util.function.UnaryOperator;
-import java.util.Collection;
-import java.util.ArrayList;
-import net.minecraft.world.item.crafting.SingleItemRecipe;
-import net.minecraft.world.item.crafting.ShapedRecipe;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Holder;
 import net.minecraft.core.NonNullList;
@@ -49,6 +34,7 @@ import java.util.stream.Stream;
  * The Minecraft calls that changed between versions, as they are in 1.20.5 and 1.20.6. Unlike the newest form (common), this is a
  * complete copy: the older versions do not stack on each other.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class Nms {
 	private Nms() {
 	}
@@ -101,8 +87,9 @@ public final class Nms {
 		return ingredient.isEmpty();
 	}
 
+	@SuppressWarnings("deprecation") // the holder of an item is only deprecated for plugins
 	public static Stream<Holder<Item>> items(Ingredient ingredient) {
-		return Arrays.stream(ingredient.getItems()).map(stack -> (Holder<Item>) stack.getItem().builtInRegistryHolder());
+		return Arrays.stream(ingredient.getItems()).map(stack -> stack.getItem().builtInRegistryHolder());
 	}
 
 	/** The base ingredient of a smithing recipe, or null if it has none (it is optional before 1.21.5). */

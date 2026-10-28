@@ -16,8 +16,6 @@ import net.minecraft.world.item.crafting.SingleItemRecipe;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Holder;
 import net.minecraft.core.NonNullList;
@@ -50,6 +48,7 @@ import java.util.stream.Stream;
  * The Minecraft calls that changed between versions, as they are in 1.21.3. Unlike the newest form (common), this is a
  * complete copy: the older versions do not stack on each other.
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class Nms {
 	private Nms() {
 	}
@@ -200,7 +199,7 @@ public final class Nms {
 	 * The stacks an ingredient takes if it matches items by their components (Paper's exact choice, which is how plugins
 	 * make a recipe take a custom item), or null for an ingredient that is a plain set of items.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "ConstantConditions"}) // a Set or a List, nullable on some versions
 	public static @Nullable List<ItemStack> exactStacks(Ingredient ingredient) {
 		if (!ingredient.isExact()) return null;
 

@@ -13,6 +13,7 @@ import java.util.UUID;
  * Paper tells plugins about those from 1.21.8 on; the older versions have a ConfigurePhase of
  * their own (in paper/<version>) that never calls back, and the compats then go by the join event instead (see {@link #available}).
  */
+@SuppressWarnings("unused") // the shared code that calls this is only compiled into the merged adapter
 public final class ConfigurePhase {
 	private ConfigurePhase() {
 	}
