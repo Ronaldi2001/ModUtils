@@ -1,0 +1,35 @@
+# For Bukkit, Spigot and CraftBukkit. Paper and Folia read paper-plugin.yml instead and ignore this file.
+name: ModUtils
+version: '${version}'
+main: me.ronaldi2001.modutils.ModUtilsPlugin
+api-version: '1.20'
+folia-supported: true
+description: Server-side support for client mods (JEI and Polymer from 1.21.3, Jade, The One Probe, AppleSkin) on Minecraft 1.20.5 to 26.3
+authors: [ Ronaldi2001 ]
+
+# Spigot has no Adventure: the server downloads it on first start
+libraries:
+  - net.kyori:adventure-api:4.25.0
+  - net.kyori:adventure-text-minimessage:4.25.0
+  - net.kyori:adventure-text-serializer-gson:4.25.0
+  - net.kyori:adventure-text-serializer-legacy:4.25.0
+  - net.kyori:adventure-platform-bukkit:4.4.1
+
+softdepend: [ ViaVersion, Geyser-Spigot, floodgate, CraftEngine, ItemsAdder, Nexo, Oraxen ]
+
+commands:
+  modutils:
+    description: Turn Mod Utils features on and off, and reload them
+    usage: /modutils <status|players [name]|reload|set <path> <value>>
+    permission: modutils.admin
+
+permissions:
+  modutils.admin:
+    description: Use /modutils to turn features on and off, change debugging and reload the config
+    default: op
+  modutils.update:
+    description: Be told when a newer version of Mod Utils is out
+    default: op
+  modutils.modblock.bypass:
+    description: Skip the client mod check of modBlock
+    default: false

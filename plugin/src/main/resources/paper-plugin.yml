@@ -1,0 +1,42 @@
+name: ModUtils
+version: '${version}'
+main: me.ronaldi2001.modutils.ModUtilsPlugin
+api-version: '1.20'
+folia-supported: true
+description: Server-side support for client mods (JEI and Polymer from 1.21.3, Jade, The One Probe, AppleSkin) on Minecraft 1.20.5 to 26.3
+authors: [ Ronaldi2001 ]
+
+permissions:
+  modutils.admin:
+    description: Use /modutils to turn features on and off, change debugging and reload the config
+    default: op
+  modutils.update:
+    description: Be told when a newer version of Mod Utils is out
+    default: op
+  modutils.modblock.bypass:
+    description: Skip the client mod check of modBlock
+    default: false
+
+dependencies:
+  server:
+    ViaVersion:
+      load: BEFORE
+      required: false
+    Geyser-Spigot:
+      load: BEFORE
+      required: false
+    floodgate:
+      load: BEFORE
+      required: false
+    CraftEngine:
+      load: BEFORE
+      required: false
+    ItemsAdder:
+      load: BEFORE
+      required: false
+    Nexo:
+      load: BEFORE
+      required: false
+    Oraxen:
+      load: BEFORE
+      required: false

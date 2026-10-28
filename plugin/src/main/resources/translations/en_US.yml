@@ -1,0 +1,150 @@
+# Messages of Mod Utils, in MiniMessage format (https://docs.advntr.dev/minimessage/format.html).
+
+# /modutils status
+status:
+  header: "<gold><u>Mod Utils Status:"
+  # Added to a mod's line while its debug is on
+  debug: "<yellow> DEBUG"
+  # Added to a mod's line when the config says it is on but it failed to start
+  failed: "<dark_gray> (config says on, but it failed to start)"
+
+  compat:
+    # Placeholders:
+    #   <versions>  the Minecraft versions players can join with: just the server's, or the range line
+    title: "<newline>  <gold>Mod Compat: <gray><versions>"
+    # Placeholders:
+    #   <min>  the oldest version
+    #   <max>  the newest version
+    range: "<min> - <max>"
+    # One line per mod. Placeholders:
+    #   <mod_name>  the mod's name from the mods section of config.yml
+    #   <state>     the state below
+    #   <debug>     the debug message, empty unless debug is on
+    #   <failed>    the failed message, empty unless the mod failed to start
+    line: "    <gray>- <mod_name>: <state><debug><failed>"
+    none: "    <dark_gray>- Not available on this Minecraft version"
+    state:
+      enabled: "<green>On"
+      disabled: "<red>Off"
+
+  block:
+    # Placeholders:
+    #   <debug>  the debug message, empty unless debug is on
+    title: "<newline>  <gold>Mod Block:<debug>"
+    # One line per blocked mod. Placeholders:
+    #   <mod_name>  the mod's name from the mods section of config.yml
+    line: "    <gray>- <white><mod_name>"
+    disabled: "    <gray>- <red>Disabled"
+    none: "    <dark_gray>- No mods blocked"
+
+  hooks:
+    title: "<newline>  <gold>Hooks:"
+    # One line per plugin Mod Utils is hooked into. Placeholders:
+    #   <hook_name>  the plugin's name
+    hooked: "    <gray>- <hook_name>: <green>Hooked"
+    # Plugins Mod Utils can hook into but that are not installed are not listed: one button shows them on hover.
+    # Left out when every plugin is installed.
+    missing:
+      # Placeholders:
+      #   <count>  how many plugins are not installed
+      button: "    <red>- <red>Not installed: <gray><count> <dark_gray>(h)"
+      # The hover text: the title, then one line per plugin. Placeholders:
+      #   <hook_name>  the plugin's name
+      title: "<gray>Not installed:"
+      line: "<red>- <hook_name>"
+
+modCompat:
+  # /modutils players
+  players:
+    header:
+      single: "<gold>Player:"
+      # Placeholders:
+      #   <player_count>  how many players are online
+      many: "<gold>Players online: <player_count>"
+    # One line per player. Placeholders:
+    #   <player>  the player's name
+    #   <client>  the client message below, empty when nothing is known about the client
+    #   <mods>    the mods the player has: the usage message for each, joined by the separator.
+    #             The none message if there are none, or the bedrock message for a Bedrock player.
+    line: " <white><player> <dark_gray><client><gray>: <mods>"
+    # Placeholders:
+    #   <players_client>   the client brand: Fabric, Forge, NeoForge, ...
+    #   <players_version>  the client's Minecraft version, empty unless ViaVersion is installed
+    client: "[<players_client> <players_version>]"
+    separator: "<gray>, "
+    none: "<dark_gray>none"
+    # A mod the player has, by whether its compat is on. Placeholders:
+    #   <mod_name>  the mod's name from the mods section of config.yml
+    usage:
+      using: "<green><mod_name>"
+      notUsing: "<red><mod_name>"
+    # Bedrock clients can't have any of the mods
+    bedrock: "<red>Bedrock; NOT SUPPORTED"
+
+  # /modutils set <setting> <value>
+  set:
+    # Placeholders:
+    #   <path>  the setting that was typed
+    unknown: "<red>There is no setting called '<path>'. Press tab to see them."
+    # Placeholders:
+    #   <value>    what was typed
+    #   <path>     the setting
+    #   <current>  its current value, or the list message below
+    invalid: "<red>'<value>' isn't a valid value for <path> (it is currently <current>)."
+    list: "a list, which can only be changed in the file"
+    # The setting was changed but no feature uses it. Placeholders:
+    #   <path>, <value>  the setting and its new value
+    #   <saved>          one of the saved, no_line or write_failed messages
+    unused: "<yellow><path> = <value> (nothing uses it). <saved>"
+    # The setting was changed and its feature restarted. Placeholders:
+    #   <path>, <value>  the setting and its new value
+    #   <feature_name>   the mod or feature that restarted
+    #   <state>          the state message of the status section
+    #   <saved>          one of the saved, no_line or write_failed messages
+    restarted: "<green><path> = <value>. <feature_name> restarted, now <state><green>. <saved>"
+    saved: "Saved to config.yml."
+    no_line: "Not saved: config.yml has no line for it. Add one to keep it."
+    write_failed: "Not saved: could not write config.yml (see the log)."
+
+  # What The One Probe shows, besides names and items
+  top:
+    # The label of the health bar
+    health: "Health: "
+    # Placeholders:
+    #   <owner_name>  the pet's owner
+    owner: "<gray>Owner: <white><owner_name>"
+    fully_grown: "<green>Fully grown"
+    # Placeholders:
+    #   <percent>  how far the crop has grown, 0 to 99
+    growth: "<gray>Growth: <yellow><percent>%"
+    # The label of the furnace's progress bar
+    cooking: "Cooking: "
+    # Placeholders:
+    #   <fuel_level>  the brewing stand's fuel
+    fuel: "<gray>Fuel: <white><fuel_level>"
+    # Placeholders:
+    #   <ticks>  how long the brew has left
+    brewing_time: "<gray>Time: <white><ticks> ticks"
+    # An empty chest, barrel and the like
+    empty: "<gray>Empty"
+
+modBlock:
+  # What a player sees when they are kicked
+  kick:
+    # A list of lines. Placeholders:
+    #   <mods>  one entry message per detected mod, each on its own line
+    header:
+      - "<red>Disallowed mods detected!"
+      - "<gray>Remove the following and rejoin:"
+      - "<mods>"
+    # Placeholders:
+    #   <mod>  the mod's name from the mods section of config.yml
+    entry: "<yellow>- <white><mod>"
+
+updateChecker:
+  # Sent to players with the permission modutils.update when they join. Clicking it opens the page of the new version.
+  # Placeholders:
+  #   <current>  the version running now
+  #   <latest>   the newer version on Modrinth
+  #   <url>      the page of the newer version
+  available: "<gold>Mod Utils <yellow><latest> <gold>is out, you have <yellow><current><gold>. <green><u>Click to download"

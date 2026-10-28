@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262c3a"/>
+      <stop offset="1" stop-color="#10131a"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fcd34d"/>
+      <stop offset="1" stop-color="#d9890b"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f3a2c"/>
+      <stop offset="1" stop-color="#0f2018"/>
+    </linearGradient>
+    <linearGradient id="green" gradientUnits="userSpaceOnUse" x1="190" y1="120" x2="330" y2="260">
+      <stop offset="0" stop-color="#6ee7a0"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+    <mask id="notches">
+      <rect x="0" y="0" width="512" height="512" fill="#fff"/>
+      <circle cx="208" cy="188" r="17" fill="#000"/>
+      <circle cx="256" cy="236" r="17" fill="#000"/>
+    </mask>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- shield -->
+  <path d="M256 30 L398 80 V194 C398 282 338 338 256 374 C174 338 114 282 114 194 V80 Z"
+        fill="url(#shield)" stroke="url(#gold)" stroke-width="16" stroke-linejoin="round"/>
+
+  <!-- puzzle piece -->
+  <g mask="url(#notches)" fill="url(#green)" transform="translate(256 188) scale(1.45) translate(-256 -188)">
+    <rect x="208" y="140" width="96" height="96" rx="6"/>
+    <circle cx="256" cy="140" r="17"/>
+    <circle cx="304" cy="188" r="17"/>
+  </g>
+
+  <!-- name -->
+  <text x="256" y="452" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif" font-weight="800"
+        font-size="68" fill="url(#gold)" textLength="400" lengthAdjust="spacingAndGlyphs">MOD UTILS</text>
+</svg>

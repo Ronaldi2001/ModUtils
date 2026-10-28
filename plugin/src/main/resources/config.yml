@@ -1,0 +1,201 @@
+# Mod Utils: server-side tools for Minecraft servers.
+#
+#   mods       Display names of client mods, used in /modutils and on the kick screen
+#   modCompat  Server-side support for client mods (AppleSkin, Jade, The One Probe, JEI, Polymer)
+#   modBlock   Kicks players whose client has mods you don't want
+#   updateChecker  Tells admins when a newer version is on Modrinth
+#
+# Change a setting in game with /modutils set <path> <value>, or edit this file and run /modutils reload.
+
+# ---------------------------------------------------------------------------------------------------------------------
+# MOD NAMES
+# The name shown for each mod, by mod id in lower case. Used by both modCompat and modBlock.
+# A mod without an entry is shown by its id.
+# ---------------------------------------------------------------------------------------------------------------------
+mods:
+  jade: Jade🔍
+  jei: JEI
+  appleskin: AppleSkin
+  polymer: Polymer
+  top: TheOneProbe
+  journeymap: Journey Map
+  xaerominimap: Xaero's Minimap
+  sodium: Sodium
+  iris: Iris
+  freecam: Freecam
+
+# ---------------------------------------------------------------------------------------------------------------------
+# MOD COMPAT
+# Server-side support for client mods. Each section only does something for players who have that client mod
+# installed. Set enabled: false to switch one off.
+# Every section has the same two switches:
+#   enabled  turns the support on or off
+#   debug    logs packet activity (noisy, for troubleshooting)
+# ---------------------------------------------------------------------------------------------------------------------
+modCompat:
+  # AppleSkin: syncs saturation and exhaustion so its hunger overlay is accurate.
+  appleSkin:
+    enabled: true
+    debug: false
+    # How often to check and sync, in ticks (20 ticks = 1 second).
+    # Higher means less network and CPU use but slower overlay updates. AppleSkin's own default is 1 (every tick).
+    # Nothing is sent to the client unless it differs from the last sync.
+    syncIntervalTicks: 10
+
+  # Jade: answers its data requests so the tooltip shows server-side info.
+  jade:
+    enabled: true
+    debug: false
+    # Rate limit per player, in milliseconds: a request that arrives sooner than this after the previous one is ignored
+    # (50 ms = 1 tick). Jade decides how often it asks; this only protects the server. 0 disables the limit.
+    minRequestIntervalMs: 50
+    # Individual tooltip features (server-side data only; Jade still shows everything else).
+    features:
+      furnace: true # Furnace progress and contents
+      brewingStand: true # Fuel and brewing time
+      beehive: true # Bee count
+      jukebox: true # Disc being played
+      itemStorage: true # Contents of chests, barrels, shulkers, ender chests, etc.
+      entityItemStorage: true # Contents of minecart chests, hopper minecarts and chest boats
+      mobGrowth: true # Time until a baby grows up
+      mobBreeding: true # Breeding cooldown
+      animalOwner: true # Pet owner name
+      nextEntityDrop: true # Time until a chicken lays an egg
+      customItemStorage: true # Contents of RawHub's own item storage barrels (needs itemStorage)
+      # A block's custom name (Vacuum Chest, Filter Hopper, barrels, ...) instead of the vanilla one.
+      # Only sent while Jade also asks about the block, for example for its contents.
+      customBlockNames: true
+
+  # The One Probe (NeoForge): answers its requests so the probe shows what the server knows.
+  top:
+    enabled: true
+    debug: false
+    # Rate limit per player, in milliseconds: a request that arrives sooner than this after the previous one is ignored
+    # (50 ms = 1 tick). The probe decides how often it asks; this only protects the server. 0 disables the limit.
+    minRequestIntervalMs: 50
+    # Individual parts of the probe (the block or entity name is always shown).
+    features:
+      cropGrowth: true # Growth of crops, nether wart, berry bushes and cocoa
+      furnace: true # Furnace contents and progress
+      brewingStand: true # Fuel and brewing time
+      itemStorage: true # Contents of chests, barrels, shulkers, ender chests, etc.
+      entityItemStorage: true # Contents of minecart chests, hopper minecarts and chest boats
+      mobHealth: true # Health bar of living entities
+      animalOwner: true # Pet owner name
+      customItemStorage: true # Contents of RawHub's own item storage barrels (needs itemStorage)
+      customBlockNames: true # A block's custom name instead of the vanilla one
+
+  # JEI (Fabric and NeoForge): the server side of recipe transfer and recipe sync.
+  # Needs Minecraft 1.21.3 or newer. Older servers (1.20.5 to 1.21.1) have no support for it and ignore this section.
+  jei:
+    enabled: true
+    debug: false
+    # Rate limit per player, in milliseconds: a transfer that arrives sooner than this after the previous one is ignored
+    # (100 ms = 2 ticks). JEI decides when a transfer is requested (when the + button is clicked); this only protects
+    # the server. 0 disables the limit.
+    minRequestIntervalMs: 100
+    features:
+      # The + button or shift-click that moves ingredients into a crafting grid
+      recipeTransfer: true
+      # Send the server's recipes to JEI on the clients (see below)
+      recipeSync: true
+    # RECIPE SYNC
+    # Sends your server's recipes, custom ones included, to JEI. Works for Fabric and NeoForge clients on 1.21.3 and up.
+    # Custom items can't be added to JEI's item list from the server without Polymer. Without Polymer support, every
+    # custom recipe shows customResultItem as its result, and recipes with a custom item as an ingredient won't work.
+    # Players see the original plain item as the input, since the server isn't modded.
+    #
+    # customResultItem: the stand-in item for clients without Polymer, or when Polymer support is off.
+    #   How it looks doesn't matter (the custom model replaces it), but JEI has to be willing to show it.
+    #   Pick an item with no recipes of its own (the dragon egg has none), so looking it up shows only custom items.
+    customResultItem: minecraft:dragon_egg
+
+  # Polymer: players with the Polymer client mod see custom items in JEI recipes, and operators see them in the
+  # creative tab.
+  # Needs Minecraft 1.21.3 or newer. Older servers (1.20.5 to 1.21.1) have no support for it and ignore this section.
+  polymer:
+    enabled: true
+    debug: false
+    # WHAT COUNTS AS A CUSTOM ITEM
+    # Only custom items are sent to Polymer clients.
+    detect:
+      itemModel: true # Has an item_model
+      customModelData: true # Has custom_model_data
+      # Has custom data, which is where plugin data (PDC) is kept.
+      # Turn on for items that only have a tag, such as blocks without a model.
+      customData: false
+      # With customData on, items are told apart by the names of their data keys. If the VALUE of a key also matters
+      # (say someplugin:block_type is "vacuum" or "filter"), list the key here. An entry is a full key
+      # (someplugin:block_type), a whole namespace (someplugin) or a pattern (someplugin:block_*).
+      #  - someplugin
+      #  - someplugin:block_*
+      customDataValues: [ ]
+      # Keys to leave out completely. Use it for data that is different on every item (a backpack's id, an owner),
+      # which would otherwise make each of those items its own custom item. Same kinds of entries as above.
+      customDataIgnore: [ ]
+    # PLAIN ITEMS THAT STAND FOR A CUSTOM ITEM
+    # Not needed for CraftEngine recipes: with CraftEngine installed, the custom items of its recipes are found through
+    # its API, so leave this empty for them. It is for recipes of other plugins that use a plain item for a custom one.
+    # A recipe whose ingredient is a plain item (say leather horse armor for a backpack) shows that plain item.
+    # List it here to show a custom item instead: the result of another recipe.
+    #   recipes: which recipes, a key with * as wildcard
+    #   item: the plain item in the recipe
+    #   like: the recipe whose result the plain item stands for, or a custom item of CraftEngine, ItemsAdder, Nexo or
+    #         Oraxen. Start a custom item with its plugin's prefix to say which plugin it is from, and the prefix is
+    #         taken off before the plugin is asked: craftengine:default:topaz, itemsadder:namespace:id, nexo:ruby,
+    #         oraxen:ruby. Without a prefix every installed plugin is asked in turn.
+    #  - recipes: "someplugin:backpack_upgrade_*"
+    #    item: minecraft:leather_horse_armor
+    #    like: someplugin:backpack
+    ingredients: [ ]
+
+# ---------------------------------------------------------------------------------------------------------------------
+# MOD BLOCK
+# Kicks players whose client has mods you don't want, with the list of everything that was found.
+# Players with the permission modutils.modblock.bypass skip the check.
+# ---------------------------------------------------------------------------------------------------------------------
+modBlock:
+  enabled: false
+  # How long after joining, in seconds, before the player is kicked
+  scanSeconds: 5
+  # The longest to wait, in seconds, if the sign checks are slow (many translation keys)
+  maxScanSeconds: 15
+  # Logs which translation key matched, for troubleshooting
+  debug: false
+
+  # CHANNEL DETECTION
+  # Mods that use networking register channels like "modid:something". List the mod id (the part before the colon) to
+  # block every channel of that mod. An entry that contains a colon blocks only that exact channel.
+  # The name in the kick message comes from the mods section above.
+  #  - xaerominimap
+  #  - journeymap
+  blockedMods: [ ]
+
+  # TRANSLATION DETECTION (virtual sign trick)
+  # For client mods without networking. The client is shown a hidden sign with these translation keys. If a key
+  # resolves to anything other than "missing", that mod's language file is loaded, so the mod is installed.
+  #
+  # Format: the mod id (its name in the kick message comes from the mods section above), then its keys:
+  #   modid:
+  #     - translation.key
+  # Take the keys from the mod's lang file (assets/<modid>/lang/en_us.json inside its jar).
+  # Pick keys that are unlikely to exist in any other mod. One key per mod is enough, more are a backup.
+  #  sodium:
+  #    - sodium.option_impact.low
+  #  iris:
+  #    - options.iris.shaderPackSelection
+  #  freecam:
+  #    - freecam.msg.enabled
+  translationChecks: { }
+
+# ---------------------------------------------------------------------------------------------------------------------
+# UPDATE CHECKER
+# Looks on Modrinth for a newer version of Mod Utils. The console is told when one is found, and so is every player with
+# the permission modutils.update (operators have it by default) when they join.
+# ---------------------------------------------------------------------------------------------------------------------
+updateChecker:
+  enabled: true
+  # How many hours to wait between checks; 0 checks only when the server starts or the config is reloaded
+  intervalHours: 24
+  # How many seconds after joining a player is told, so the message comes after the other join messages; 0 tells them at once
+  joinDelaySeconds: 0
