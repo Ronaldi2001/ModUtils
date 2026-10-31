@@ -276,6 +276,21 @@ public final class PolymerSupport implements PolymerHook {
 		this.debug("Sent hello to " + id);
 	}
 
+	/**
+	 * The server could not read a creative slot the client sent: log it and send the player their inventory again, so the
+	 * item they took is gone from their cursor instead of being theirs on their screen only.
+	 */
+	void creativeSlotRejected(Session session, Throwable cause) {
+		this.warn("Ignored a creative slot from " + session.id + " that the server cannot read (an item of a client mod?): "
+				+ (cause.getCause() == null ? cause.getMessage() : cause.getCause().toString()));
+
+		ModUtilsPlugin plugin = this.plugin;
+		Player player = session.player;
+		if (plugin == null || player == null) return;
+
+		plugin.getScheduler().runOnEntity(player, player::updateInventory);
+	}
+
 	void onQuit(UUID id) {
 		this.sessions.remove(id);
 	}

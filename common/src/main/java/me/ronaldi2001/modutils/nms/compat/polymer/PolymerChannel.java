@@ -1,9 +1,12 @@
 package me.ronaldi2001.modutils.nms.compat.polymer;
 
 import me.ronaldi2001.modutils.nms.Nms;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.DiscardedPayload;
 import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
@@ -11,6 +14,7 @@ import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCreativeModeSlotPacket;
 import net.minecraft.world.item.ItemStack;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +59,36 @@ final class PolymerChannel extends ChannelDuplexHandler {
 			}
 		}
 		ctx.fireChannelRead(msg);
+	}
+
+	/**
+	 * A creative slot the server can't read (a client mod's item, whose id the server doesn't have) would end the
+	 * connection. The slot is dropped instead, and the player's inventory sent again so the item doesn't stay on their cursor.
+	 */
+	@Override
+	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+		if (cause instanceof DecoderException && cause.getMessage() != null && cause.getMessage().contains("set_creative_mode_slot")) {
+			this.discardUnread(ctx);
+			this.support.creativeSlotRejected(this.session, cause);
+			return;
+		}
+		ctx.fireExceptionCaught(cause);
+	}
+
+	/**
+	 * The decoder keeps what it did not read of the broken packet, which would be taken for the start of the next one.
+	 */
+	private void discardUnread(ChannelHandlerContext ctx) {
+		try {
+			if (!(ctx.pipeline().get("decoder") instanceof ByteToMessageDecoder decoder)) return;
+
+			Method internalBuffer = ByteToMessageDecoder.class.getDeclaredMethod("internalBuffer");
+			internalBuffer.setAccessible(true);
+			ByteBuf buffer = (ByteBuf) internalBuffer.invoke(decoder);
+			buffer.skipBytes(buffer.readableBytes());
+		} catch (ReflectiveOperationException | RuntimeException e) {
+			this.support.warn("Could not clear the packet that failed to decode for " + this.session.id + ": " + e);
+		}
 	}
 
 	@Override
