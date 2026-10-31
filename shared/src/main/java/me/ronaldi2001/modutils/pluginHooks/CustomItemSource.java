@@ -17,4 +17,9 @@ public interface CustomItemSource {
 	 * @return the item, or null if this plugin has no such item (or isn't ready yet)
 	 */
 	@Nullable ItemStack itemStack(String itemId);
+
+	/**
+	 * @return the id this plugin knows the stack by (what {@link #itemStack} takes), or null if it isn't one of its items
+	 */
+	@Nullable String itemId(ItemStack stack);
 }

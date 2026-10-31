@@ -5,6 +5,7 @@ import me.ronaldi2001.modutils.adapter.VersionAdapter;
 import me.ronaldi2001.modutils.modBlock.ModBlockModule;
 import me.ronaldi2001.modutils.modCompat.ModCompatModule;
 import me.ronaldi2001.modutils.modCompat.api.BlockNameSource;
+import me.ronaldi2001.modutils.modCompat.api.ItemRebuilder;
 import me.ronaldi2001.modutils.pluginHooks.bedrock.BedrockHook;
 import me.ronaldi2001.modutils.pluginHooks.CustomItemSource;
 import me.ronaldi2001.modutils.pluginHooks.craftengine.CraftEngineHook;
@@ -22,6 +23,7 @@ import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.Nullable;
@@ -102,6 +104,39 @@ public final class ModUtilsPlugin extends JavaPlugin {
 		for (CustomItemSource source : sources) {
 			ItemStack item = source.itemStack(id);
 			if (item != null) return item;
+		}
+		return null;
+	}
+
+	/**
+	 * A custom item built again by the plugin it belongs to (an {@link ItemRebuilder} first, then the built-in hooks), from a copy that came back from a client (a creative tab
+	 * pickup): the copy is only what the item looks like to the client.
+	 *
+	 * @return the item with the same amount, or null if no plugin knows the stack
+	 */
+	public @Nullable ItemStack rebuildCustomItem(ItemStack stack) {
+		for (RegisteredServiceProvider<ItemRebuilder> registration : this.getServer().getServicesManager().getRegistrations(ItemRebuilder.class)) {
+			ItemStack item;
+			try {
+				item = registration.getProvider().rebuild(stack.clone());
+			} catch (RuntimeException e) {
+				this.getLogger().log(Level.WARNING, registration.getPlugin().getName() + " failed to rebuild an item", e);
+				continue;
+			}
+			if (item == null) continue;
+
+			item.setAmount(stack.getAmount());
+			return item;
+		}
+		for (CustomItemSource source : this.getItemSources()) {
+			String id = source.itemId(stack);
+			if (id == null) continue;
+
+			ItemStack item = source.itemStack(id);
+			if (item == null) continue;
+
+			item.setAmount(stack.getAmount());
+			return item;
 		}
 		return null;
 	}

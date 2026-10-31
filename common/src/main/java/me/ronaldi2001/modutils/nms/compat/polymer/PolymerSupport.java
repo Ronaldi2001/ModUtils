@@ -1,13 +1,13 @@
 package me.ronaldi2001.modutils.nms.compat.polymer;
 
-import me.ronaldi2001.modutils.nms.ServerApi;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import me.ronaldi2001.modutils.nms.Nms;
 import me.ronaldi2001.modutils.ModUtilsPlugin;
-import me.ronaldi2001.modutils.pluginHooks.craftengine.CraftEngineHook;
 import me.ronaldi2001.modutils.nms.ItemTranslator;
+import me.ronaldi2001.modutils.nms.Nms;
+import me.ronaldi2001.modutils.nms.ServerApi;
+import me.ronaldi2001.modutils.pluginHooks.craftengine.CraftEngineHook;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -28,22 +28,13 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.ShapedRecipe;
-import net.minecraft.world.item.crafting.SingleItemRecipe;
-import net.minecraft.world.item.crafting.SmithingTransformRecipe;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -69,7 +60,9 @@ public final class PolymerSupport implements PolymerHook {
 	static final Identifier SYNC_STARTED = id("sync/started");
 	static final Identifier SYNC_ITEMS = id("sync/items");
 	static final Identifier SYNC_FINISHED = id("sync/finished");
-	/** The creative tab holding every custom item, which is also how Polymer's JEI plugin finds them. */
+	/**
+	 * The creative tab holding every custom item, which is also how Polymer's JEI plugin finds them.
+	 */
 	private static final Identifier TAB_ID = Identifier.fromNamespaceAndPath("modcompat", "custom_items");
 
 	private static final int SERVER_PROTOCOL = SharedConstants.getProtocolVersion();
@@ -134,10 +127,14 @@ public final class PolymerSupport implements PolymerHook {
 	private static final Identifier KEY_LIMITED_F3 = id("settings/limited_f3");
 	private static final Identifier KEY_EXTENDED_INGREDIENTS = id("core/extended_recipe_ingredients");
 
-	/** What we call ourselves to the client. */
+	/**
+	 * What we call ourselves to the client.
+	 */
 	private static final String SERVER_VERSION = "modcompat";
 
-	/** Entries are sent in batches this big, to stay well below the packet size limit. */
+	/**
+	 * Entries are sent in batches this big, to stay well below the packet size limit.
+	 */
 	private static final int ENTRIES_PER_PACKET = 40;
 
 	private final Map<UUID, Session> sessions = new ConcurrentHashMap<>();
@@ -150,7 +147,9 @@ public final class PolymerSupport implements PolymerHook {
 	private final AtomicInteger explained = new AtomicInteger();
 
 	private static final int MODE_INSERT_END = 2;
-	/** Recipes are looked through again at most this often. */
+	/**
+	 * Recipes are looked through again at most this often.
+	 */
 	private static final long SCAN_INTERVAL_MS = 30_000L;
 
 	private volatile boolean scanned;
@@ -170,7 +169,7 @@ public final class PolymerSupport implements PolymerHook {
 	}
 
 	void enable(ModUtilsPlugin plugin, Logger logger, boolean debug, String tabName, PolymerItems.Detection detection,
-			   List<IngredientRule> rules) {
+							List<IngredientRule> rules) {
 		this.plugin = plugin;
 		this.logger = logger;
 		this.debug = debug;
@@ -210,28 +209,46 @@ public final class PolymerSupport implements PolymerHook {
 	static final class Session {
 		final UUID id;
 		final Channel channel;
-		/** Held while the creative tab is sent, so two sends for one player don't interleave. */
+		/**
+		 * Held while the creative tab is sent, so two sends for one player don't interleave.
+		 */
 		final Object tabLock = new Object();
-		/** The packet versions the client announced, by channel. */
+		/**
+		 * The packet versions the client announced, by channel.
+		 */
 		volatile Map<Identifier, int[]> clientVersions = Map.of();
 		volatile boolean handshakeSeen;
-		/** The client has the mod but can't be talked to (another version of it). */
+		/**
+		 * The client has the mod but can't be talked to (another version of it).
+		 */
 		volatile boolean failed;
 		volatile boolean ready;
 		volatile boolean extended;
-		/** Set once the player is in the world and has been sent the custom items. Tagging only starts then. */
+		/**
+		 * Set once the player is in the world and has been sent the custom items. Tagging only starts then.
+		 */
 		volatile boolean synced;
 		volatile boolean playing;
 		volatile @Nullable Player player;
-		/** Version to write each sync packet in. */
+		/**
+		 * Version to write each sync packet in.
+		 */
 		volatile int itemsVersion = -1;
-		/** How to talk to this client, by its Minecraft version. */
+		/**
+		 * How to talk to this client, by its Minecraft version.
+		 */
 		volatile @Nullable Profile profile;
-		/** For a client on another Minecraft version than the server: writes its items. Null for one on the server's. */
+		/**
+		 * For a client on another Minecraft version than the server: writes its items. Null for one on the server's.
+		 */
 		volatile @Nullable ItemTranslator translator;
-		/** Whether the client can take the creative tab with the custom items in it. */
+		/**
+		 * Whether the client can take the creative tab with the custom items in it.
+		 */
 		volatile boolean canTab;
-		/** How many custom items the client's tab holds, to know when it is out of date. */
+		/**
+		 * How many custom items the client's tab holds, to know when it is out of date.
+		 */
 		volatile int tabCount = -1;
 		final Map<Integer, Boolean> sentItems = new ConcurrentHashMap<>();
 
@@ -250,8 +267,12 @@ public final class PolymerSupport implements PolymerHook {
 		Session session = new Session(id, channel);
 		this.sessions.put(id, session);
 		channel.pipeline().addAfter("encoder", PolymerChannel.NAME, new PolymerChannel(this, session));
-		this.sendRaw(session, HELLO, versioned(-1, buf -> {
-		}));
+		this.sendRaw(
+				session, HELLO, versioned(
+						-1, buf -> {
+						}
+				)
+		);
 		this.debug("Sent hello to " + id);
 	}
 
@@ -302,10 +323,14 @@ public final class PolymerSupport implements PolymerHook {
 			this.debug(session.id + " answered the hello: Polymer " + clientVersion);
 
 			// Our handshake now; our metadata once the client's has told us which Minecraft version it is
-			this.sendRaw(session, HANDSHAKE, versioned(V_HANDSHAKE, buf -> {
-				buf.writeUtf(SERVER_VERSION);
-				buf.writeVarInt(0); // we have no packets for the client to send us
-			}));
+			this.sendRaw(
+					session, HANDSHAKE, versioned(
+							V_HANDSHAKE, buf -> {
+								buf.writeUtf(SERVER_VERSION);
+								buf.writeVarInt(0); // we have no packets for the client to send us
+							}
+					)
+			);
 		} finally {
 			in.release();
 		}
@@ -346,17 +371,21 @@ public final class PolymerSupport implements PolymerHook {
 	 * them when it differs from its own, so for a client on another version than the server it names the client's.
 	 */
 	private void sendMetadata(Session session, int protocol) {
-		this.sendRaw(session, METADATA, versioned(V_METADATA, buf -> {
-			Map<Identifier, Tag> metadata = new HashMap<>();
-			metadata.put(KEY_VERSION, StringTag.valueOf(Nms.versionName()));
-			metadata.put(KEY_PROTOCOL, IntTag.valueOf(protocol));
-			metadata.put(KEY_LIMITED_F3, ByteTag.valueOf(false));
-			buf.writeVarInt(metadata.size());
-			metadata.forEach((key, value) -> {
-				buf.writeIdentifier(key);
-				ByteBufCodecs.TAG.encode(buf, value);
-			});
-		}));
+		this.sendRaw(
+				session, METADATA, versioned(
+						V_METADATA, buf -> {
+							Map<Identifier, Tag> metadata = new HashMap<>();
+							metadata.put(KEY_VERSION, StringTag.valueOf(Nms.versionName()));
+							metadata.put(KEY_PROTOCOL, IntTag.valueOf(protocol));
+							metadata.put(KEY_LIMITED_F3, ByteTag.valueOf(false));
+							buf.writeVarInt(metadata.size());
+							metadata.forEach((key, value) -> {
+								buf.writeIdentifier(key);
+								ByteBufCodecs.TAG.encode(buf, value);
+							});
+						}
+				)
+		);
 	}
 
 	private void handleMetadata(Session session, byte[] data) {
@@ -464,13 +493,21 @@ public final class PolymerSupport implements PolymerHook {
 			session.translator = translator;
 		}
 
-		this.sendRaw(session, SYNC_STARTED, versioned(V_SYNC_STARTED, buf -> {
-		}));
+		this.sendRaw(
+				session, SYNC_STARTED, versioned(
+						V_SYNC_STARTED, buf -> {
+						}
+				)
+		);
 		// No SYNC_CLEAR: a fresh join has nothing to forget, and it makes the client add every item twice
 		session.sentItems.clear();
 		this.sendItems(session, this.items.all());
-		this.sendRaw(session, SYNC_FINISHED, versioned(V_SYNC_FINISHED, buf -> {
-		}));
+		this.sendRaw(
+				session, SYNC_FINISHED, versioned(
+						V_SYNC_FINISHED, buf -> {
+						}
+				)
+		);
 		session.synced = true;
 		this.debug("Synced " + this.items.all().size() + " custom items to " + session.id);
 		this.notifyReady(session);
@@ -492,15 +529,19 @@ public final class PolymerSupport implements PolymerHook {
 		}
 		for (int from = 0; from < missing.size(); from += ENTRIES_PER_PACKET) {
 			List<PolymerItems.Entry> batch = missing.subList(from, Math.min(missing.size(), from + ENTRIES_PER_PACKET));
-			this.sendRaw(session, SYNC_ITEMS, versioned(session.itemsVersion, buf -> {
-				RegistryFriendlyByteBuf registryBuf = new RegistryFriendlyByteBuf(buf, MinecraftServer.getServer().registryAccess());
-				registryBuf.writeVarInt(batch.size());
-				for (PolymerItems.Entry entry : batch) {
-					registryBuf.writeVarInt(entry.numId());
-					registryBuf.writeIdentifier(entry.id());
-					writeStack(registryBuf, session.translator, entry.visual());
-				}
-			}));
+			this.sendRaw(
+					session, SYNC_ITEMS, versioned(
+							session.itemsVersion, buf -> {
+								RegistryFriendlyByteBuf registryBuf = new RegistryFriendlyByteBuf(buf, MinecraftServer.getServer().registryAccess());
+								registryBuf.writeVarInt(batch.size());
+								for (PolymerItems.Entry entry : batch) {
+									registryBuf.writeVarInt(entry.numId());
+									registryBuf.writeIdentifier(entry.id());
+									writeStack(registryBuf, session.translator, entry.visual());
+								}
+							}
+					)
+			);
 		}
 	}
 
@@ -648,34 +689,46 @@ public final class PolymerSupport implements PolymerHook {
 		stacks.sort(java.util.Comparator.comparing(stack -> stack.getHoverName().getString()));
 		int version = profile.base();
 
-		this.sendRaw(session, profile.tabDefine(), versioned(version, buf -> {
-			RegistryFriendlyByteBuf registryBuf = new RegistryFriendlyByteBuf(buf, MinecraftServer.getServer().registryAccess());
-			registryBuf.writeIdentifier(TAB_ID);
-			ComponentSerialization.TRUSTED_CONTEXT_FREE_STREAM_CODEC.encode(registryBuf, Component.literal(this.tabName));
-			// The icon is not optional: the first stack, which the client has an equivalent of
-			if (translator == null) {
-				ItemStack.STREAM_CODEC.encode(registryBuf, stacks.getFirst());
-			} else {
-				translator.writeStack(registryBuf, stacks.getFirst());
-			}
-		}));
+		this.sendRaw(
+				session, profile.tabDefine(), versioned(
+						version, buf -> {
+							RegistryFriendlyByteBuf registryBuf = new RegistryFriendlyByteBuf(buf, MinecraftServer.getServer().registryAccess());
+							registryBuf.writeIdentifier(TAB_ID);
+							ComponentSerialization.TRUSTED_CONTEXT_FREE_STREAM_CODEC.encode(registryBuf, Component.literal(this.tabName));
+							// The icon is not optional: the first stack, which the client has an equivalent of
+							if (translator == null) {
+								ItemStack.STREAM_CODEC.encode(registryBuf, stacks.getFirst());
+							} else {
+								translator.writeStack(registryBuf, stacks.getFirst());
+							}
+						}
+				)
+		);
 		this.sendRaw(session, profile.tabClear(), versioned(version, buf -> buf.writeIdentifier(TAB_ID)));
-		this.sendRaw(session, profile.tabAdd(), versioned(version, buf -> {
-			RegistryFriendlyByteBuf registryBuf = new RegistryFriendlyByteBuf(buf, MinecraftServer.getServer().registryAccess());
-			registryBuf.writeIdentifier(TAB_ID);
-			// Two lists, the tab's own and the search. Each is one "insert at the end" entry with all the items, or, in
-			// the older layout, just the items
-			for (int list = 0; list < 2; list++) {
-				if (!profile.legacyContent()) {
-					registryBuf.writeVarInt(1);
-					registryBuf.writeVarInt(MODE_INSERT_END);
-				}
-				registryBuf.writeVarInt(stacks.size());
-				for (ItemStack stack : stacks) writeStack(registryBuf, translator, stack);
-			}
-		}));
-		this.sendRaw(session, profile.tabApply(), versioned(version, buf -> {
-		}));
+		this.sendRaw(
+				session, profile.tabAdd(), versioned(
+						version, buf -> {
+							RegistryFriendlyByteBuf registryBuf = new RegistryFriendlyByteBuf(buf, MinecraftServer.getServer().registryAccess());
+							registryBuf.writeIdentifier(TAB_ID);
+							// Two lists, the tab's own and the search. Each is one "insert at the end" entry with all the items, or, in
+							// the older layout, just the items
+							for (int list = 0; list < 2; list++) {
+								if (!profile.legacyContent()) {
+									registryBuf.writeVarInt(1);
+									registryBuf.writeVarInt(MODE_INSERT_END);
+								}
+								registryBuf.writeVarInt(stacks.size());
+								for (ItemStack stack : stacks) writeStack(registryBuf, translator, stack);
+							}
+						}
+				)
+		);
+		this.sendRaw(
+				session, profile.tabApply(), versioned(
+						version, buf -> {
+						}
+				)
+		);
 		this.debug("Sent the creative tab with " + stacks.size() + " custom items to " + session.id
 				+ (stacks.size() != entries.size() ? " (" + entries.size() + " registered, the rest look the same)" : ""));
 	}
@@ -847,6 +900,33 @@ public final class PolymerSupport implements PolymerHook {
 		// The client has to know the item before it sees a stack of it
 		this.sendItems(session, List.of(entry));
 		return PolymerItems.tag(stack, entry);
+	}
+
+	/**
+	 * A stack the client took from the creative tab, as the server should have it. The tab holds one look-alike stack for
+	 * each custom item, which is not the item itself, so when the plugin the item belongs to knows it, the plugin builds
+	 * the real one. Any other stack is only {@link #untag untagged}.
+	 */
+	ItemStack fromCreative(ItemStack stack) {
+		ItemStack clean = this.untag(stack);
+		ModUtilsPlugin plugin = this.plugin;
+		if (plugin == null || clean.isEmpty()) return clean;
+
+		PolymerItems.Entry entry = this.items.find(clean);
+		// Only a stack that is the tab's own: anything else the player moved around is a real item already
+		if (entry == null || !ItemStack.isSameItemSameComponents(clean, this.untag(entry.visual()))) return clean;
+
+		org.bukkit.inventory.ItemStack rebuilt;
+		try {
+			rebuilt = plugin.rebuildCustomItem(CraftItemStack.asBukkitCopy(clean));
+		} catch (RuntimeException e) {
+			this.warn("Could not build the item taken from the creative tab: " + e);
+			return clean;
+		}
+		if (rebuilt == null) return clean;
+
+		this.debug("Creative tab pickup " + entry.id() + " built by its plugin");
+		return CraftItemStack.asNMSCopy(rebuilt);
 	}
 
 	/**

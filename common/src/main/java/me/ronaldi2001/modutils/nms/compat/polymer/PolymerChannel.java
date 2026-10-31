@@ -42,7 +42,7 @@ final class PolymerChannel extends ChannelDuplexHandler {
 
 		if (this.session.synced && msg instanceof ServerboundSetCreativeModeSlotPacket(short slotNum, ItemStack itemStack)) {
 			try {
-				msg = new ServerboundSetCreativeModeSlotPacket(slotNum, this.support.untag(itemStack));
+				msg = new ServerboundSetCreativeModeSlotPacket(slotNum, this.support.fromCreative(itemStack));
 			} catch (Throwable e) {
 				this.support.warn("Could not clean a creative slot for " + this.session.id + ": " + e);
 			}

@@ -57,6 +57,15 @@ public final class NexoHook implements CustomItemSource, BlockNameSource {
 		}
 	}
 
+	@Override
+	public @Nullable String itemId(ItemStack stack) {
+		try {
+			return NexoItems.idFromItem(stack);
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
 	/** The item a Nexo block (note block, string, chorus or the like) places, or null if the block isn't Nexo's. */
 	private @Nullable ItemStack blockItem(Block block) {
 		try {

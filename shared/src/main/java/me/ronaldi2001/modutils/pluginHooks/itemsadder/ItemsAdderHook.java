@@ -54,6 +54,16 @@ public final class ItemsAdderHook implements CustomItemSource, BlockNameSource {
 		}
 	}
 
+	@Override
+	public @Nullable String itemId(ItemStack stack) {
+		try {
+			CustomStack custom = CustomStack.byItemStack(stack);
+			return custom == null ? null : custom.getNamespacedID();
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
 	/** The item an ItemsAdder block places, or null if the block isn't ItemsAdder's. */
 	private @Nullable ItemStack blockItem(Block block) {
 		try {

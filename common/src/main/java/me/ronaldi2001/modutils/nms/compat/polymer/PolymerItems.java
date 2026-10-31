@@ -111,6 +111,14 @@ final class PolymerItems {
 		});
 	}
 
+	/**
+	 * @return the custom item this stack is if it has been registered already, without registering it, or null
+	 */
+	@Nullable Entry find(ItemStack stack) {
+		if (stack.isEmpty() || !this.looksCustom(stack)) return null;
+		return this.byKey.get(this.keyOf(stack));
+	}
+
 	private boolean looksCustom(ItemStack stack) {
 		Detection detection = this.detection;
 		return detection.itemModel() && Nms.itemModel(stack) != null

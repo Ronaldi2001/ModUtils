@@ -56,6 +56,15 @@ public final class OraxenHook implements CustomItemSource, BlockNameSource {
 		}
 	}
 
+	@Override
+	public @Nullable String itemId(ItemStack stack) {
+		try {
+			return OraxenItems.getIdByItem(stack);
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
 	/** The item an Oraxen block (note block, string, chorus or shaped) places, or null if the block isn't Oraxen's. */
 	private @Nullable ItemStack blockItem(Block block) {
 		try {

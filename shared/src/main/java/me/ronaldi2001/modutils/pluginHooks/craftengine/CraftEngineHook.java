@@ -151,6 +151,16 @@ public final class CraftEngineHook implements CustomItemSource, BlockNameSource 
 		}
 	}
 
+	@Override
+	public @Nullable String itemId(ItemStack stack) {
+		try {
+			Key id = CraftEngineItems.getCustomItemId(stack);
+			return id == null ? null : id.toString();
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
 	/**
 	 * @param recipeKey the key of a CraftEngine recipe, e.g. {@code default:topaz_trident}
 	 * @return the item ids each ingredient of the recipe takes, one list per ingredient (template, base, addition for
