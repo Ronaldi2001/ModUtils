@@ -72,7 +72,9 @@ Mod Utils hooks into other plugins when they are installed, and does nothing for
 | [ViaVersion](https://modrinth.com/plugin/viaversion) | Supports players on other client versions by translating item and component data |
 | [Geyser](https://modrinth.com/plugin/geyser) / [Floodgate](https://modrinth.com/mod/floodgate) | Detects Bedrock players, who are skipped by every compat |
 | [CraftEngine](https://modrinth.com/plugin/craftengine) (26.5+) | Shows the custom items in CraftEngine recipes correctly in JEI, with no config needed |
-| ItemsAdder, Nexo, Oraxen | Look up their items by id for the `modCompat.polymer.ingredients` setting |
+| ItemsAdder (Need to TEST) | Look up their items by id for the `modCompat.polymer.ingredients` setting |
+| Nexo (Need to TEST) | Look up their items by id for the `modCompat.polymer.ingredients` setting |
+| Oraxen | Look up their items by id for the `modCompat.polymer.ingredients` setting |
 
 ### Update checker
 
