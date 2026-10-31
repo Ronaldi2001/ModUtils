@@ -203,15 +203,19 @@ public final class BlockProviders {
 
 		@Override
 		public void append(BlockCtx ctx) {
-			if (!(ctx.blockEntity() instanceof Nameable nameable) || !nameable.hasCustomName()) return;
-			net.minecraft.network.chat.Component name = nameable.getCustomName();
-			if (name == null) return;
-
-			// Names are translatable keys that only this server can resolve: turn them into text for the player
 			Locale locale = ServerApi.locale(ctx.player().getBukkitEntity());
-			Component rendered = GlobalTranslator.render(AdventureBridge.asAdventure(name), locale);
-			net.minecraft.network.chat.Component text = AdventureBridge.asVanilla(rendered);
-			ctx.put(id(), buf -> ComponentSerialization.STREAM_CODEC.encode(buf, text));
+			net.minecraft.network.chat.Component text = null;
+			if (ctx.blockEntity() instanceof Nameable nameable && nameable.hasCustomName()) {
+				net.minecraft.network.chat.Component name = nameable.getCustomName();
+				// Names are translatable keys that only this server can resolve: turn them into text for the player
+				if (name != null) text = me.ronaldi2001.modutils.nms.ItemText.renderName(name, locale);
+			}
+			// A plugin's custom block (CraftEngine's, for one) is a vanilla block to the server: ask the plugin for its name
+			if (text == null) text = me.ronaldi2001.modutils.nms.BlockNames.lookup(ctx.bukkitBlock(), locale);
+			if (text == null) return;
+
+			net.minecraft.network.chat.Component sent = text;
+			ctx.put(id(), buf -> ComponentSerialization.STREAM_CODEC.encode(buf, sent));
 		}
 	}
 }

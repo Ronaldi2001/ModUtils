@@ -32,7 +32,7 @@ public final class ItemWriterCache {
 		if (entry != null && entry.locale().equals(locale)) return entry.writer();
 
 		ItemTranslator translator = ItemTranslator.forPlayer(this.plugin, player);
-		ItemWriter writer = translator == null ? ItemWriter.VANILLA : ItemWriter.translating(translator);
+		ItemWriter writer = translator == null ? ItemWriter.rendering(locale) : ItemWriter.translating(translator);
 		this.writers.put(id, new Entry(locale, writer));
 		return writer;
 	}

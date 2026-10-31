@@ -8,6 +8,7 @@ import me.ronaldi2001.modutils.nms.compat.jade.EntityCtx;
 import me.ronaldi2001.modutils.nms.compat.jade.providers.ItemStorageSupport;
 import me.ronaldi2001.modutils.translations.Argument;
 import me.ronaldi2001.modutils.translations.TransUtils;
+import me.ronaldi2001.modutils.nms.BlockNames;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.translation.GlobalTranslator;
 import net.minecraft.ChatFormatting;
@@ -107,8 +108,13 @@ final class TopProviders {
 			Component name = nameable.getCustomName();
 			if (name != null) customName = rendered(ServerApi.locale(ctx.player().getBukkitEntity()), name);
 		}
+		// A plugin's custom block (CraftEngine's, for one) is a vanilla block to the server: ask the plugin for its name
+		if (customName == null && enabled(features, "customBlockNames")) {
+			customName = BlockNames.lookup(ctx.bukkitBlock(), ServerApi.locale(ctx.player().getBukkitEntity()));
+		}
 
-		ItemStack icon = new ItemStack(block.asItem());
+		ItemStack icon = BlockNames.icon(ctx.bukkitBlock());
+		if (icon == null) icon = new ItemStack(block.asItem());
 		if (icon.isEmpty()) {
 			// A block that has no item (fire, a portal, ...): only its name
 			root.vertical()
@@ -220,7 +226,7 @@ final class TopProviders {
 	}
 
 	private static Component rendered(Locale locale, Component name) {
-		return AdventureBridge.asVanilla(GlobalTranslator.render(AdventureBridge.asAdventure(name), locale));
+		return me.ronaldi2001.modutils.nms.ItemText.renderName(name, locale);
 	}
 
 	private static boolean enabled(ConfigurationSection features, String key) {

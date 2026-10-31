@@ -1,13 +1,19 @@
 package me.ronaldi2001.modutils.pluginHooks.nexo;
 
+import com.nexomc.nexo.api.NexoBlocks;
 import com.nexomc.nexo.api.NexoItems;
 import com.nexomc.nexo.items.ItemBuilder;
+import com.nexomc.nexo.mechanics.custom_block.CustomBlockMechanic;
 import me.ronaldi2001.modutils.ModUtilsPlugin;
+import me.ronaldi2001.modutils.modCompat.api.BlockNameSource;
 import me.ronaldi2001.modutils.pluginHooks.CustomItemSource;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -16,7 +22,7 @@ import java.util.Optional;
  * Compiled against Nexo 1.29.1; {@code NexoItems.optionalItemFromId} and {@code ItemBuilder.build} are the same in
  * 1.15.0, 1.19.0, 1.25.0 and 1.29.1.
  */
-public final class NexoHook implements CustomItemSource {
+public final class NexoHook implements CustomItemSource, BlockNameSource {
 	private static final String PLUGIN = "Nexo";
 
 	private NexoHook() {
@@ -49,5 +55,26 @@ public final class NexoHook implements CustomItemSource {
 		} catch (RuntimeException e) {
 			return null;
 		}
+	}
+
+	/** The item a Nexo block (note block, string, chorus or the like) places, or null if the block isn't Nexo's. */
+	private @Nullable ItemStack blockItem(Block block) {
+		try {
+			CustomBlockMechanic mechanic = NexoBlocks.customBlockMechanic(block);
+			return mechanic == null ? null : this.itemStack(mechanic.getItemID());
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
+	@Override
+	public @Nullable Component blockName(Block block, Locale locale) {
+		ItemStack item = this.blockItem(block);
+		return item == null ? null : item.effectiveName();
+	}
+
+	@Override
+	public @Nullable ItemStack blockIcon(Block block) {
+		return this.blockItem(block);
 	}
 }

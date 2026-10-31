@@ -87,6 +87,7 @@ public class Jade121Compat extends JadeCompat {
 
 	@Override
 	protected void forget(UUID id) {
+		super.forget(id);
 		this.pinged.remove(id);
 	}
 

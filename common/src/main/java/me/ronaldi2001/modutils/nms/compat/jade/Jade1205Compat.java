@@ -202,7 +202,7 @@ public class Jade1205Compat extends Jade121Compat {
 
 		// Names are translatable keys that only this server can resolve: turn them into text for the player
 		Locale locale = ServerApi.locale(ctx.player().getBukkitEntity());
-		Component text = AdventureBridge.asVanilla(GlobalTranslator.render(AdventureBridge.asAdventure(name), locale));
+		Component text = me.ronaldi2001.modutils.nms.ItemText.renderName(name, locale);
 		ComponentSerialization.CODEC.encodeStart(ctx.level().registryAccess().createSerializationContext(NbtOps.INSTANCE), text)
 				.result().ifPresent(encoded -> ctx.tag().put("given_name", encoded));
 	}

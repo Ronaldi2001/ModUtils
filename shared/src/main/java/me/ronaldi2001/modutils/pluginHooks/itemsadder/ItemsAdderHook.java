@@ -1,11 +1,17 @@
 package me.ronaldi2001.modutils.pluginHooks.itemsadder;
 
+import dev.lone.itemsadder.api.CustomBlock;
 import dev.lone.itemsadder.api.CustomStack;
 import me.ronaldi2001.modutils.ModUtilsPlugin;
+import me.ronaldi2001.modutils.modCompat.api.BlockNameSource;
 import me.ronaldi2001.modutils.pluginHooks.CustomItemSource;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
+
+import java.util.Locale;
 
 /**
  * ItemsAdder's custom items, by namespaced id ({@code namespace:id}).
@@ -13,7 +19,7 @@ import org.jspecify.annotations.Nullable;
  * Compiled against the ItemsAdder API 4.0.17; 4.0.17 and 4.0.18-beta-10 have the same {@code CustomStack}. ItemsAdder
  * loads its items asynchronously, so an id can be unknown for a while after startup.
  */
-public final class ItemsAdderHook implements CustomItemSource {
+public final class ItemsAdderHook implements CustomItemSource, BlockNameSource {
 	private static final String PLUGIN = "ItemsAdder";
 
 	private ItemsAdderHook() {
@@ -46,5 +52,26 @@ public final class ItemsAdderHook implements CustomItemSource {
 		} catch (RuntimeException e) {
 			return null;
 		}
+	}
+
+	/** The item an ItemsAdder block places, or null if the block isn't ItemsAdder's. */
+	private @Nullable ItemStack blockItem(Block block) {
+		try {
+			CustomBlock custom = CustomBlock.byAlreadyPlaced(block);
+			return custom == null ? null : custom.getItemStack();
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
+	@Override
+	public @Nullable Component blockName(Block block, Locale locale) {
+		ItemStack item = this.blockItem(block);
+		return item == null ? null : item.effectiveName();
+	}
+
+	@Override
+	public @Nullable ItemStack blockIcon(Block block) {
+		return this.blockItem(block);
 	}
 }

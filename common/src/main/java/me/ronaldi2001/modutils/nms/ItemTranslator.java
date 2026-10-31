@@ -8,7 +8,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.kyori.adventure.translation.GlobalTranslator;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -26,7 +25,6 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.IntUnaryOperator;
-import java.util.function.UnaryOperator;
 
 /**
  * Writes items for a client on a different Minecraft version than the server.
@@ -49,7 +47,7 @@ public final class ItemTranslator {
 	private final int customNameComponentId;
 	private final int loreComponentId;
 	private final int customDataComponentId;
-	private final UnaryOperator<Component> nameRenderer;
+	private final @Nullable Locale locale;
 
 	/**
 	 * @param itemIds              maps a server item id to the client's id, or to a negative number if it has none
@@ -63,12 +61,12 @@ public final class ItemTranslator {
 						  boolean customModelDataAsInt, int itemNameComponentId, int customNameComponentId,
 						  int loreComponentId, int customDataComponentId) {
 		this(itemIds, itemModelComponentId, customModelDataComponentId, customModelDataAsInt, itemNameComponentId,
-				customNameComponentId, loreComponentId, customDataComponentId, UnaryOperator.identity());
+				customNameComponentId, loreComponentId, customDataComponentId, null);
 	}
 
 	private ItemTranslator(IntUnaryOperator itemIds, int itemModelComponentId, int customModelDataComponentId,
 						   boolean customModelDataAsInt, int itemNameComponentId, int customNameComponentId,
-						   int loreComponentId, int customDataComponentId, UnaryOperator<Component> nameRenderer) {
+						   int loreComponentId, int customDataComponentId, @Nullable Locale locale) {
 		this.itemIds = itemIds;
 		this.itemModelComponentId = itemModelComponentId;
 		this.customModelDataComponentId = customModelDataComponentId;
@@ -77,18 +75,19 @@ public final class ItemTranslator {
 		this.customNameComponentId = customNameComponentId;
 		this.loreComponentId = loreComponentId;
 		this.customDataComponentId = customDataComponentId;
-		this.nameRenderer = nameRenderer;
+		this.locale = locale;
 	}
 
 	/**
 	 * Item names are usually translatable components that Paper renders per player when it sends an item, which
-	 * doesn't happen for items we write ourselves. This renders them for the given locale the same way.
+	 * doesn't happen for items we write ourselves. This renders them for the given locale the same way, through
+	 * the {@link me.ronaldi2001.modutils.modCompat.api.ItemTextRenderer}s plugins have registered.
 	 */
 	public ItemTranslator withLocale(Locale locale) {
 		return new ItemTranslator(this.itemIds, this.itemModelComponentId, this.customModelDataComponentId,
 				this.customModelDataAsInt, this.itemNameComponentId, this.customNameComponentId, this.loreComponentId,
 				this.customDataComponentId,
-				name -> AdventureBridge.asVanilla(GlobalTranslator.render(AdventureBridge.asAdventure(name), locale)));
+				locale);
 	}
 
 	/**
@@ -198,27 +197,39 @@ public final class ItemTranslator {
 		}
 		if (writeItemName) {
 			buf.writeVarInt(this.itemNameComponentId);
-			this.writeComponent(buf, itemName);
+			this.writeComponent(buf, this.renderName(itemName));
 		}
 		if (writeCustomName) {
 			buf.writeVarInt(this.customNameComponentId);
-			this.writeComponent(buf, customName);
+			this.writeComponent(buf, this.renderName(customName));
 		}
 		if (writeLore) {
 			buf.writeVarInt(this.loreComponentId);
 			// A list of components, at most ItemLore.MAX_LINES long
-			List<Component> lines = lore.lines();
+			List<Component> lines = this.renderLore(lore.lines());
 			int count = Math.min(lines.size(), ItemLore.MAX_LINES);
 			buf.writeVarInt(count);
 			for (int i = 0; i < count; i++) this.writeComponent(buf, lines.get(i));
 		}
 	}
 
+	private Component renderName(Component name) {
+		return this.locale == null ? name : ItemText.renderName(name, this.locale);
+	}
+
+	/** A line can turn into several, so this is done before the number of lines is written. */
+	private List<Component> renderLore(List<Component> lines) {
+		if (this.locale == null) return lines;
+		List<Component> rendered = new java.util.ArrayList<>(lines.size());
+		for (Component line : lines) rendered.addAll(ItemText.renderLore(line, this.locale));
+		return rendered;
+	}
+
 	private void writeComponent(FriendlyByteBuf buf, Component component) {
 		// Encoded on a registry-aware buffer so the codec has what it needs, then copied into the caller's buffer
 		RegistryFriendlyByteBuf temp = new RegistryFriendlyByteBuf(buf.alloc().buffer(), RegistryAccess.EMPTY);
 		try {
-			ComponentSerialization.STREAM_CODEC.encode(temp, this.nameRenderer.apply(component));
+			ComponentSerialization.STREAM_CODEC.encode(temp, component);
 			buf.writeBytes(temp, temp.readerIndex(), temp.readableBytes());
 		} finally {
 			temp.release();

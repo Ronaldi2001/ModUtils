@@ -4,7 +4,7 @@ import io.netty.buffer.Unpooled;
 import me.ronaldi2001.modutils.nms.AdventureBridge;
 import me.ronaldi2001.modutils.nms.Nms;
 import me.ronaldi2001.modutils.nms.ItemTranslator;
-import net.kyori.adventure.translation.GlobalTranslator;
+import me.ronaldi2001.modutils.nms.ItemText;
 import net.minecraft.core.HolderSet;
 import me.ronaldi2001.modutils.nms.compat.polymer.PolymerHook;
 import net.minecraft.SharedConstants;
@@ -379,14 +379,16 @@ final class RecipeTranscoder {
 		// The lore is what JEI shows under the name when hovering the result
 		ItemLore lore = result.get(DataComponents.LORE);
 		if (lore != null && !lore.lines().isEmpty()) {
-			shown.set(DataComponents.LORE, new ItemLore(lore.lines().stream().map(this::render).toList()));
+			List<Component> lines = new java.util.ArrayList<>();
+			for (Component line : lore.lines()) lines.addAll(ItemText.renderLore(line, this.locale));
+			shown.set(DataComponents.LORE, new ItemLore(lines.subList(0, Math.min(lines.size(), ItemLore.MAX_LINES))));
 		}
 
 		return shown;
 	}
 
 	private Component render(Component name) {
-		return AdventureBridge.asVanilla(GlobalTranslator.render(AdventureBridge.asAdventure(name), this.locale));
+		return ItemText.renderName(name, this.locale);
 	}
 
 	// ------------------------------------------------------------------ recipes

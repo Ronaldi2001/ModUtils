@@ -49,6 +49,18 @@ modCompat:
     # Rate limit per player, in milliseconds: a request that arrives sooner than this after the previous one is ignored
     # (50 ms = 1 tick). Jade decides how often it asks; this only protects the server. 0 disables the limit.
     minRequestIntervalMs: 50
+    # Jade only asks the server about blocks that have a block entity, so a custom block of another plugin (CraftEngine's,
+    # for one) shows the name of the vanilla block it stands in for. With this on, the server works out which block each
+    # Jade player is looking at and sends the real name unasked. Only the name: Jade draws the icon on its own, so it
+    # keeps showing the vanilla block's item. Needs customBlockNames. Jade 1.21.2 and newer only.
+    # Cost: a small one that grows with the number of Jade players. For each of them, every pushIntervalTicks, the server
+    # does one ray trace to the block they look at. The name is only looked up and sent when the target changes, and
+    # again once a second while they keep looking at it. Raise pushIntervalTicks or turn this off if you see lag with many
+    # players online.
+    pushCustomBlockNames: true
+    # How often to check the block a player looks at, in ticks (20 ticks = 1 second). Higher costs less, but the name
+    # takes longer to show up after looking at a new block.
+    pushIntervalTicks: 4
     # Individual tooltip features (server-side data only; Jade still shows everything else).
     features:
       furnace: true # Furnace progress and contents
@@ -62,11 +74,12 @@ modCompat:
       animalOwner: true # Pet owner name
       nextEntityDrop: true # Time until a chicken lays an egg
       customItemStorage: true # Contents of RawHub's own item storage barrels (needs itemStorage)
-      # A block's custom name (Vacuum Chest, Filter Hopper, barrels, ...) instead of the vanilla one.
+      # A block's custom name (Vacuum Chest, Filter Hopper, barrels, ...) instead of the vanilla one. Also the name of
+      # other plugins' custom blocks, such as CraftEngine's (see pushCustomBlockNames above).
       # Only sent while Jade also asks about the block, for example for its contents.
       customBlockNames: true
 
-  # The One Probe (NeoForge): answers its requests so the probe shows what the server knows.
+  # The One Probe: answers its requests so the probe shows what the server knows.
   top:
     enabled: true
     debug: false
