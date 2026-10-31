@@ -149,8 +149,9 @@ public final class UpdateCheckerModule implements FeatureModule, Listener {
 		return null;
 	}
 
+	@SuppressWarnings("deprecation") // Paper deprecates it for getPluginMeta, which Bukkit does not have
 	private String currentVersion() {
-		return this.plugin.getPluginMeta().getVersion();
+		return this.plugin.getDescription().getVersion();
 	}
 
 	@EventHandler

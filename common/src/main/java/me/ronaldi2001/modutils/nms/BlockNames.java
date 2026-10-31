@@ -25,7 +25,7 @@ public final class BlockNames {
 		for (RegisteredServiceProvider<BlockNameSource> registration : Bukkit.getServicesManager().getRegistrations(BlockNameSource.class)) {
 			try {
 				org.bukkit.inventory.ItemStack icon = registration.getProvider().blockIcon(block);
-				if (icon != null && !icon.isEmpty()) return CraftItemStack.asNMSCopy(icon);
+				if (icon != null && !icon.getType().isAir() && icon.getAmount() > 0) return CraftItemStack.asNMSCopy(icon);
 			} catch (RuntimeException e) {
 				// A plugin that fails to name its block is left out
 			}

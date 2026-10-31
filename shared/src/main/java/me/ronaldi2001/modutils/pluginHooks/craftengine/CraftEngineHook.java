@@ -4,19 +4,13 @@ import me.ronaldi2001.modutils.ModUtilsPlugin;
 import me.ronaldi2001.modutils.modCompat.api.BlockNameSource;
 import me.ronaldi2001.modutils.pluginHooks.CustomItemSource;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.momirealms.craftengine.bukkit.api.CraftEngineBlocks;
 import net.momirealms.craftengine.bukkit.api.CraftEngineItems;
 import net.momirealms.craftengine.bukkit.item.BukkitItemDefinition;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
-import net.momirealms.craftengine.core.item.ItemBuildContext;
-import net.momirealms.craftengine.core.item.processor.ItemNameProcessor;
-import net.momirealms.craftengine.core.item.processor.ItemProcessor;
-import net.momirealms.craftengine.core.item.processor.OverwritableItemNameProcessor;
 import net.momirealms.craftengine.core.item.recipe.Ingredient;
 import net.momirealms.craftengine.core.item.recipe.Recipe;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
-import net.momirealms.craftengine.core.util.AdventureHelper;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.UniqueKey;
 import org.bukkit.Bukkit;
@@ -24,7 +18,6 @@ import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.Nullable;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -95,7 +88,7 @@ public final class CraftEngineHook implements CustomItemSource, BlockNameSource 
 
 			Key itemId = state.settings().itemId();
 			if (itemId != null) {
-				Component name = this.itemName(itemId.toString());
+				Component name = CraftEngineNames.itemName(itemId.toString());
 				if (name != null) return name;
 			}
 			return Component.translatable(state.owner().value().translationKey());
@@ -113,40 +106,6 @@ public final class CraftEngineHook implements CustomItemSource, BlockNameSource 
 			Key itemId = state.settings().itemId();
 			return itemId == null ? null : this.itemStack(itemId.toString());
 		} catch (RuntimeException e) {
-			return null;
-		}
-	}
-
-	/**
-	 * CraftEngine puts an item's name on only when it sends the item to a client, so the item built for the server still
-	 * has its base material's name. This is the name from the item's config.
-	 */
-	private @Nullable Component itemName(String itemId) {
-		BukkitItemDefinition definition = CraftEngineItems.byId(itemId);
-		if (definition == null) return null;
-
-		for (ItemProcessor[] processors : List.of(definition.clientBoundProcessors(), definition.processors())) {
-			for (ItemProcessor processor : processors) {
-				if (processor instanceof OverwritableItemNameProcessor overwritable) {
-					processor = wrappedName(overwritable);
-				}
-				if (processor instanceof ItemNameProcessor name) {
-					// CraftEngine bundles its own copy of Adventure: go over JSON to the server's
-					String json = AdventureHelper.componentToJson(AdventureHelper.deserialize(name.itemName(), ItemBuildContext.empty()));
-					return GsonComponentSerializer.gson().deserialize(json);
-				}
-			}
-		}
-		return definition.buildBukkitItem().effectiveName();
-	}
-
-	/** The overwritable name keeps its name processor private. */
-	private static @Nullable ItemProcessor wrappedName(OverwritableItemNameProcessor processor) {
-		try {
-			Field field = OverwritableItemNameProcessor.class.getDeclaredField("modifier");
-			field.setAccessible(true);
-			return (ItemProcessor) field.get(processor);
-		} catch (ReflectiveOperationException | RuntimeException e) {
 			return null;
 		}
 	}

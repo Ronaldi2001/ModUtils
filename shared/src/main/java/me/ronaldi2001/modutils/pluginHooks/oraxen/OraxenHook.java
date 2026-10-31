@@ -6,6 +6,7 @@ import io.th0rgal.oraxen.items.ItemBuilder;
 import io.th0rgal.oraxen.mechanics.Mechanic;
 import me.ronaldi2001.modutils.ModUtilsPlugin;
 import me.ronaldi2001.modutils.modCompat.api.BlockNameSource;
+import me.ronaldi2001.modutils.pluginHooks.ItemNames;
 import me.ronaldi2001.modutils.pluginHooks.CustomItemSource;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -78,7 +79,7 @@ public final class OraxenHook implements CustomItemSource, BlockNameSource {
 	@Override
 	public @Nullable Component blockName(Block block, Locale locale) {
 		ItemStack item = this.blockItem(block);
-		return item == null ? null : item.effectiveName();
+		return item == null ? null : ItemNames.of(item);
 	}
 
 	@Override
