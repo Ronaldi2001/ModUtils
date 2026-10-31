@@ -17,7 +17,6 @@ allow.
 ![Supported Paper Logo](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/supported/paper_vector.svg)
 ![Supported Purpur Logo](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/supported/purpur_vector.svg)
 ![Supported Spigot Logo](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/supported/spigot_vector.svg)
-![Supported Bukkit Logo](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/supported/bukkit_vector.svg)
 
 One jar runs on **Paper, Folia, Purpur, Spigot and CraftBukkit**, from **1.20.5 up to 26.3**. With
 **ViaVersion**, server and client versions can be mixed freely, as long as both are in the supported range for the mod.
