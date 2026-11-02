@@ -5,6 +5,7 @@ import me.ronaldi2001.modutils.nms.ConfigurePhase;
 import me.ronaldi2001.modutils.nms.Connections;
 import me.ronaldi2001.modutils.ModUtilsPlugin;
 import me.ronaldi2001.modutils.modCompat.api.ModCompat;
+import me.ronaldi2001.modutils.nms.compat.CompatNamespaces;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -65,7 +66,8 @@ public final class PolymerCompat extends ModCompat {
 		}
 
 		PolymerSupport.INSTANCE.enable(this.plugin, this.plugin.getLogger(), section.getBoolean("debug", false),
-				section.getString("tabName", "Server Items"), detection, rules);
+				section.getString("tabName", "Server Items"), CompatNamespaces.itemNamespace(section),
+				detection, rules);
 		Runnable stopConfigure = ConfigurePhase.register(this.plugin, this::onConfigure);
 		Runnable stopReload = this.plugin.getPlatform().onResourcesReloaded(this::onResourcesReloaded);
 		this.unregisterConfigure = () -> {

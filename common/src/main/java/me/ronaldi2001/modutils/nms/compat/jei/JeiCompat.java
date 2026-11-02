@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import me.ronaldi2001.modutils.ModUtilsPlugin;
 import me.ronaldi2001.modutils.modCompat.api.ModCompat;
+import me.ronaldi2001.modutils.nms.compat.CompatNamespaces;
 import me.ronaldi2001.modutils.nms.ConfigurePhase;
 import me.ronaldi2001.modutils.nms.Connections;
 import me.ronaldi2001.modutils.nms.ItemTranslator;
@@ -145,6 +146,11 @@ public class JeiCompat extends ModCompat implements PluginMessageListener {
 		return "JEI";
 	}
 
+	private @org.jspecify.annotations.Nullable String logRecipeNamespace(@org.jspecify.annotations.Nullable String namespace) {
+		if (namespace != null) this.debug("Recipes are shown under the namespace " + namespace);
+		return namespace;
+	}
+
 	@Override
 	public void onEnable(ConfigurationSection section) {
 		this.debug = section.getBoolean("debug", false);
@@ -155,7 +161,7 @@ public class JeiCompat extends ModCompat implements PluginMessageListener {
 		this.transferEnabled = features == null || features.getBoolean("recipeTransfer", true);
 		boolean syncEnabled = features == null || features.getBoolean("recipeSync", true);
 		RecipeDisplayConfig display = RecipeDisplayConfig.parse(section, this.plugin.getLogger());
-		this.recipeSync = syncEnabled ? new RecipeSync(this.plugin, this.debug, display, this.polymer) : null;
+		this.recipeSync = syncEnabled ? new RecipeSync(this.plugin, this.debug, display, this.polymer, this.logRecipeNamespace(CompatNamespaces.recipeNamespace(section))) : null;
 		if (this.debug && syncEnabled) {
 			try {
 				RecipeSelfTest.run(this.plugin.getLogger(), display, SERVER_PROTOCOL);

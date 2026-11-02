@@ -136,13 +136,16 @@ final class RecipeSync {
 	private final boolean debug;
 	private final RecipeDisplayConfig display;
 	private final PolymerHook polymer;
+	private final @Nullable String recipeNamespace;
 
 	private final Map<String, byte[]> cache = new ConcurrentHashMap<>();
 	private volatile int cachedRecipeCount = -1;
 
-	RecipeSync(ModUtilsPlugin plugin, boolean debug, RecipeDisplayConfig display, PolymerHook polymer) {
+	RecipeSync(ModUtilsPlugin plugin, boolean debug, RecipeDisplayConfig display, PolymerHook polymer,
+			   @Nullable String recipeNamespace) {
 		this.plugin = plugin;
 		this.polymer = polymer;
+		this.recipeNamespace = recipeNamespace;
 		this.debug = debug;
 		this.display = display;
 	}
@@ -327,7 +330,7 @@ final class RecipeSync {
 
 					RegistryFriendlyByteBuf entry = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess);
 					try {
-						Nms.writeRecipeId(entry, holder);
+						this.writeRecipeId(entry, holder);
 						entry.writeVarInt(clientSerializerId);
 						entry.writeBytes(body);
 						byte[] bytes = new byte[entry.readableBytes()];
@@ -374,7 +377,7 @@ final class RecipeSync {
 
 			RegistryFriendlyByteBuf key = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess);
 			try {
-				Nms.writeRecipeId(key, holder);
+				this.writeRecipeId(key, holder);
 				byte[] keyBytes = new byte[key.readableBytes()];
 				key.readBytes(keyBytes);
 
@@ -387,6 +390,22 @@ final class RecipeSync {
 			}
 		}
 		return encoded;
+	}
+
+	/**
+	 * Writes a recipe's id. With a recipe namespace configured the id moves into it, keeping the original namespace in
+	 * the path ({@code default:palm_plate} becomes {@code <namespace>:default/palm_plate}) so ids stay unique. JEI shows the
+	 * namespace as the mod the recipe is by.
+	 */
+	private void writeRecipeId(RegistryFriendlyByteBuf buf, RecipeHolder<?> holder) {
+		String namespace = this.recipeNamespace;
+		if (namespace == null) {
+			Nms.writeRecipeId(buf, holder);
+			return;
+		}
+		var original = Nms.recipeId(holder);
+		// An id is written as the text namespace:path on every version
+		buf.writeUtf(namespace + ":" + original.getNamespace() + "/" + original.getPath());
 	}
 
 	/**

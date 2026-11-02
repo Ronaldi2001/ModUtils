@@ -63,7 +63,9 @@ public final class PolymerSupport implements PolymerHook {
 	/**
 	 * The creative tab holding every custom item, which is also how Polymer's JEI plugin finds them.
 	 */
-	private static final Identifier TAB_ID = Identifier.fromNamespaceAndPath("modcompat", "custom_items");
+	private Identifier tabId() {
+		return Identifier.fromNamespaceAndPath(this.items.namespace(), "custom_items");
+	}
 
 	private static final int SERVER_PROTOCOL = SharedConstants.getProtocolVersion();
 
@@ -168,9 +170,10 @@ public final class PolymerSupport implements PolymerHook {
 		return Identifier.fromNamespaceAndPath("polymer", path);
 	}
 
-	void enable(ModUtilsPlugin plugin, Logger logger, boolean debug, String tabName, PolymerItems.Detection detection,
-							List<IngredientRule> rules) {
+	void enable(ModUtilsPlugin plugin, Logger logger, boolean debug, String tabName, String namespace,
+							PolymerItems.Detection detection, List<IngredientRule> rules) {
 		this.plugin = plugin;
+		this.items.namespace(namespace);
 		this.logger = logger;
 		this.debug = debug;
 		this.tabName = tabName;
@@ -708,8 +711,13 @@ public final class PolymerSupport implements PolymerHook {
 				session, profile.tabDefine(), versioned(
 						version, buf -> {
 							RegistryFriendlyByteBuf registryBuf = new RegistryFriendlyByteBuf(buf, MinecraftServer.getServer().registryAccess());
-							registryBuf.writeIdentifier(TAB_ID);
-							ComponentSerialization.TRUSTED_CONTEXT_FREE_STREAM_CODEC.encode(registryBuf, Component.literal(this.tabName));
+							registryBuf.writeIdentifier(this.tabId());
+							ComponentSerialization.TRUSTED_CONTEXT_FREE_STREAM_CODEC.encode(
+									registryBuf, me.ronaldi2001.modutils.nms.AdventureBridge.asVanilla(
+											// Inside an empty root: the client styles the root of the name (blue), which
+											// would replace the colour of a name that starts with one
+											net.kyori.adventure.text.Component.empty().append(
+													net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(this.tabName))));
 							// The icon is not optional: the first stack, which the client has an equivalent of
 							if (translator == null) {
 								ItemStack.STREAM_CODEC.encode(registryBuf, stacks.getFirst());
@@ -719,12 +727,12 @@ public final class PolymerSupport implements PolymerHook {
 						}
 				)
 		);
-		this.sendRaw(session, profile.tabClear(), versioned(version, buf -> buf.writeIdentifier(TAB_ID)));
+		this.sendRaw(session, profile.tabClear(), versioned(version, buf -> buf.writeIdentifier(this.tabId())));
 		this.sendRaw(
 				session, profile.tabAdd(), versioned(
 						version, buf -> {
 							RegistryFriendlyByteBuf registryBuf = new RegistryFriendlyByteBuf(buf, MinecraftServer.getServer().registryAccess());
-							registryBuf.writeIdentifier(TAB_ID);
+							registryBuf.writeIdentifier(this.tabId());
 							// Two lists, the tab's own and the search. Each is one "insert at the end" entry with all the items, or, in
 							// the older layout, just the items
 							for (int list = 0; list < 2; list++) {

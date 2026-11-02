@@ -118,6 +118,11 @@ modCompat:
     # (100 ms = 2 ticks). JEI decides when a transfer is requested (when the + button is clicked); this only protects
     # the server. 0 disables the limit.
     minRequestIntervalMs: 100
+    # The "mod" recipes are shown as being by in JEI ("Recipe By: ..."), instead of the namespace of their own id
+    # (default, oraxen, ...). Empty keeps each recipe's own.
+    # "$itemNamespace" uses modCompat.polymer.itemNamespace instead (the two can't point at each other).
+    # The recipe's own namespace moves into its id (default:palm_plate -> <namespace>:default/palm_plate), so ids stay unique.
+    recipeNamespace: "$itemNamespace"
     features:
       # The + button or shift-click that moves ingredients into a crafting grid
       recipeTransfer: true
@@ -140,6 +145,14 @@ modCompat:
   polymer:
     enabled: true
     debug: false
+    # The name of the creative tab holding the custom items. Mods that show an item's source (like Jade or
+    # Polymer's tooltips) show this. Supports MiniMessage, e.g. "<gold><bold>My Server</bold></gold>".
+    tabName: "<gold>Server</gold> <green>Items/Blocks</green>"
+    # The "mod" custom items belong to in JEI's item list and tooltips. Only lowercase letters, digits and _ - .
+    # are allowed; the client shows it capitalised (modcompat -> Modcompat). Recipes show the namespace of their
+    # own recipe id (e.g. CraftEngine's "default"), which comes from the plugin that made the recipe.
+    # "$recipeNamespace" uses modCompat.jei.recipeNamespace instead (the two can't point at each other).
+    itemNamespace: modcompat
     # WHAT COUNTS AS A CUSTOM ITEM
     # Only custom items are sent to Polymer clients.
     detect:

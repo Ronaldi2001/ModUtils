@@ -84,6 +84,17 @@ final class PolymerItems {
 		this.detection = detection;
 	}
 
+	private volatile String namespace = "modcompat";
+
+	/** The namespace of the ids given to custom items: what JEI and tooltips show as the item's mod. */
+	void namespace(String namespace) {
+		this.namespace = namespace;
+	}
+
+	String namespace() {
+		return this.namespace;
+	}
+
 	private final Map<String, Entry> byKey = new ConcurrentHashMap<>();
 	private final AtomicInteger nextId = new AtomicInteger(FIRST_ID);
 
@@ -103,7 +114,7 @@ final class PolymerItems {
 
 		return this.byKey.computeIfAbsent(key, k -> {
 			Identifier base = BuiltInRegistries.ITEM.getKey(stack.getItem());
-			Identifier id = Identifier.fromNamespaceAndPath("modcompat", base.getPath() + "/" + hash(k));
+			Identifier id = Identifier.fromNamespaceAndPath(this.namespace, base.getPath() + "/" + hash(k));
 			java.util.function.Consumer<String> log = this.onNew;
 			if (log != null) log.accept(id + " <- " + k);
 			Entry entry = new Entry(this.nextId.getAndIncrement(), id, stack.copyWithCount(1));
