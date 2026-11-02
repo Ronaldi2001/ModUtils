@@ -46,13 +46,47 @@ public final class LangFileMerger {
 				Node parent = parentPath.isEmpty() ? null : targetByPath.get(parentPath);
 				if (!parentPath.isEmpty() && (parent == null || parent.leaf())) continue;
 				int childIndent = parent == null ? node.indent() : parent.indent() + (node.indent() - referenceByPath.get(parentPath).indent());
-				int insertAt = parent == null ? lastContentLine(lines) + 1 : parent.end();
-				lines.addAll(insertAt, createLines(referenceLines, node, childIndent));
+				int insertAt = insertionPoint(lines, node, parent, parentPath, referenceNodes, targetByPath);
+				List<String> block = createLines(referenceLines, node, childIndent);
+				// Keep the spacing the reference has around the key, without doubling blank lines already there
+				int first = leadingStart(referenceLines, node.start());
+				int last = node.leaf() ? node.end() : node.start() + 1;
+				if (first > 0 && referenceLines.get(first - 1).isBlank() && insertAt > 0 && !lines.get(insertAt - 1).isBlank()) block.addFirst("");
+				if (node.leaf() && last < referenceLines.size() && referenceLines.get(last).isBlank()
+						&& insertAt < lines.size() && !lines.get(insertAt).isBlank()) block.add("");
+				lines.addAll(insertAt, block);
 				changed = true;
 				break;
 			}
 		}
 		return String.join(separator, lines) + (trailingNewline ? separator : "");
+	}
+
+	/**
+	 * Where a missing key goes: after the sibling before it in the reference, or else before the sibling after it, so the
+	 * order matches the reference. With no sibling in the target it goes at the end of its parent.
+	 */
+	private static int insertionPoint(@NotNull List<String> lines, @NotNull Node node, Node parent, @NotNull List<String> parentPath,
+									  @NotNull List<Node> referenceNodes, @NotNull Map<List<String>, Node> targetByPath) {
+		List<Node> siblings = referenceNodes.stream()
+				.filter(n -> n.path().size() == node.path().size() && n.path().subList(0, n.path().size() - 1).equals(parentPath))
+				.toList();
+		int index = siblings.indexOf(node);
+		for (int i = index - 1; i >= 0; i--) {
+			Node existing = targetByPath.get(siblings.get(i).path());
+			if (existing != null) return existing.end();
+		}
+		for (int i = index + 1; i < siblings.size(); i++) {
+			Node existing = targetByPath.get(siblings.get(i).path());
+			if (existing != null) return leadingStart(lines, existing.start());
+		}
+		return parent == null ? lastContentLine(lines) + 1 : parent.end();
+	}
+
+	/** The first line of the comments directly above the key at {@code start}, or {@code start} if it has none. */
+	private static int leadingStart(@NotNull List<String> lines, int start) {
+		while (start > 0 && lines.get(start - 1).trim().startsWith("#")) start--;
+		return start;
 	}
 
 	private static @NotNull List<String> split(@NotNull String text) {
@@ -68,8 +102,7 @@ public final class LangFileMerger {
 	}
 
 	private static @NotNull List<String> createLines(@NotNull List<String> referenceLines, @NotNull Node node, int childIndent) {
-		int first = node.start();
-		while (first > 0 && referenceLines.get(first - 1).trim().startsWith("#")) first--;
+		int first = leadingStart(referenceLines, node.start());
 		int last = node.leaf() ? node.end() : node.start() + 1;
 		int shift = childIndent - node.indent();
 		List<String> result = new ArrayList<>();
