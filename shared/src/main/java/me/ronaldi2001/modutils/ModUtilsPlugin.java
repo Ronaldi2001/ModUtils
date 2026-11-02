@@ -39,6 +39,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Locale;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 /**
@@ -217,6 +218,23 @@ public final class ModUtilsPlugin extends JavaPlugin {
 		return this.getConfig().getString("mods." + id.toLowerCase(Locale.ROOT), id);
 	}
 
+	/**
+	 * Loads the hook for another plugin, only if that plugin is there. A hook class names the other plugin's classes, and
+	 * the JVM loads them while it checks the hook's class, so on a server without the plugin, or with a version of it that
+	 * lacks one of them, merely calling the hook would throw. Then the hook is left off instead of this plugin.
+	 */
+	private <T> @Nullable T loadHook(String pluginName, Supplier<@Nullable T> loader) {
+		if (!this.getServer().getPluginManager().isPluginEnabled(pluginName)) return null;
+
+		try {
+			return loader.get();
+		} catch (LinkageError e) {
+			this.getLogger().warning(pluginName + " is installed, but this plugin could not use it (" + e + "); "
+					+ "its support is off.");
+			return null;
+		}
+	}
+
 	@Override
 	public void onEnable() {
 		this.platform = this.loadPlatform();
@@ -225,25 +243,25 @@ public final class ModUtilsPlugin extends JavaPlugin {
 		// Server owners can also switch it off for every plugin in plugins/bStats/config.yml
 		if (this.getConfig().getBoolean("metrics.enabled", true)) new Metrics(this, BSTATS_ID);
 
-		this.viaVersionHook = ViaVersionHook.load(this);
+		this.viaVersionHook = this.loadHook("ViaVersion", () -> ViaVersionHook.load(this));
 		this.bedrockHook = BedrockHook.load(this);
-		this.craftEngineHook = CraftEngineHook.load(this);
+		this.craftEngineHook = this.loadHook("CraftEngine", () -> CraftEngineHook.load(this));
 		if (this.craftEngineHook != null) {
 			// Low, so a plugin that names CraftEngine's blocks itself wins
 			this.getServer().getServicesManager().register(BlockNameSource.class, this.craftEngineHook, this, ServicePriority.Low);
 			this.getServer().getServicesManager().register(StorageSource.class, this.craftEngineHook, this, ServicePriority.Low);
 		}
-		this.itemsAdderHook = ItemsAdderHook.load(this);
+		this.itemsAdderHook = this.loadHook("ItemsAdder", () -> ItemsAdderHook.load(this));
 		if (this.itemsAdderHook != null) {
 			this.getServer().getServicesManager().register(BlockNameSource.class, this.itemsAdderHook, this, ServicePriority.Low);
 			this.getServer().getServicesManager().register(StorageSource.class, this.itemsAdderHook, this, ServicePriority.Low);
 		}
-		this.nexoHook = NexoHook.load(this);
+		this.nexoHook = this.loadHook("Nexo", () -> NexoHook.load(this));
 		if (this.nexoHook != null) {
 			this.getServer().getServicesManager().register(BlockNameSource.class, this.nexoHook, this, ServicePriority.Low);
 			this.getServer().getServicesManager().register(StorageSource.class, this.nexoHook, this, ServicePriority.Low);
 		}
-		this.oraxenHook = OraxenHook.load(this);
+		this.oraxenHook = this.loadHook("Oraxen", () -> OraxenHook.load(this));
 		if (this.oraxenHook != null) {
 			this.getServer().getServicesManager().register(BlockNameSource.class, this.oraxenHook, this, ServicePriority.Low);
 			this.getServer().getServicesManager().register(StorageSource.class, this.oraxenHook, this, ServicePriority.Low);
