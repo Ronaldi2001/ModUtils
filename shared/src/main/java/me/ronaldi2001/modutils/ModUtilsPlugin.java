@@ -6,6 +6,7 @@ import me.ronaldi2001.modutils.modBlock.ModBlockModule;
 import me.ronaldi2001.modutils.modCompat.ModCompatModule;
 import me.ronaldi2001.modutils.modCompat.api.BlockNameSource;
 import me.ronaldi2001.modutils.modCompat.api.ItemRebuilder;
+import me.ronaldi2001.modutils.modCompat.api.StorageSource;
 import me.ronaldi2001.modutils.pluginHooks.bedrock.BedrockHook;
 import me.ronaldi2001.modutils.pluginHooks.CustomItemSource;
 import me.ronaldi2001.modutils.pluginHooks.craftengine.CraftEngineHook;
@@ -225,18 +226,22 @@ public final class ModUtilsPlugin extends JavaPlugin {
 		if (this.craftEngineHook != null) {
 			// Low, so a plugin that names CraftEngine's blocks itself wins
 			this.getServer().getServicesManager().register(BlockNameSource.class, this.craftEngineHook, this, ServicePriority.Low);
+			this.getServer().getServicesManager().register(StorageSource.class, this.craftEngineHook, this, ServicePriority.Low);
 		}
 		this.itemsAdderHook = ItemsAdderHook.load(this);
 		if (this.itemsAdderHook != null) {
 			this.getServer().getServicesManager().register(BlockNameSource.class, this.itemsAdderHook, this, ServicePriority.Low);
+			this.getServer().getServicesManager().register(StorageSource.class, this.itemsAdderHook, this, ServicePriority.Low);
 		}
 		this.nexoHook = NexoHook.load(this);
 		if (this.nexoHook != null) {
 			this.getServer().getServicesManager().register(BlockNameSource.class, this.nexoHook, this, ServicePriority.Low);
+			this.getServer().getServicesManager().register(StorageSource.class, this.nexoHook, this, ServicePriority.Low);
 		}
 		this.oraxenHook = OraxenHook.load(this);
 		if (this.oraxenHook != null) {
 			this.getServer().getServicesManager().register(BlockNameSource.class, this.oraxenHook, this, ServicePriority.Low);
+			this.getServer().getServicesManager().register(StorageSource.class, this.oraxenHook, this, ServicePriority.Low);
 		}
 
 		this.updateChecker = new UpdateCheckerModule(this);

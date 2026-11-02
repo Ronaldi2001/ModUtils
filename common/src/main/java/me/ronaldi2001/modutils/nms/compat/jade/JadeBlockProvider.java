@@ -17,5 +17,13 @@ public interface JadeBlockProvider {
 		return false;
 	}
 
+	/**
+	 * True to also answer unasked for the block a player looks at when it has no block entity, which Jade never asks
+	 * about. For a plugin's custom block that has a name or contents (see JadeCompat's push).
+	 */
+	default boolean pushedWithoutBlockEntity() {
+		return false;
+	}
+
 	void append(BlockCtx ctx);
 }

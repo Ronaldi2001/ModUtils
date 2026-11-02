@@ -62,10 +62,11 @@ modCompat:
     minRequestIntervalMs: 50
     # Jade only asks the server about blocks that have a block entity, so a custom block of another plugin (CraftEngine's,
     # for one) shows the name of the vanilla block it stands in for. With this on, the server works out which block each
-    # Jade player is looking at and sends the real name unasked. Only the name: Jade draws the icon on its own, so it
-    # keeps showing the vanilla block's item. Needs customBlockNames. Jade 1.21.2 and newer only.
+    # Jade player is looking at and sends the real name and the contents of custom storages (CraftEngine's safe, for one)
+    # unasked. Jade draws the icon on its own, so it keeps showing the vanilla block's item. Needs customBlockNames and
+    # itemStorage for the name and the contents. Jade 1.21.2 and newer only.
     # Cost: a small one that grows with the number of Jade players. For each of them, every pushIntervalTicks, the server
-    # does one ray trace to the block they look at. The name is only looked up and sent when the target changes, and
+    # does one ray trace to the block they look at. The data is only looked up and sent when the target changes, and
     # again once a second while they keep looking at it. Raise pushIntervalTicks or turn this off if you see lag with many
     # players online.
     pushCustomBlockNames: true
@@ -84,7 +85,7 @@ modCompat:
       mobBreeding: true # Breeding cooldown
       animalOwner: true # Pet owner name
       nextEntityDrop: true # Time until a chicken lays an egg
-      customItemStorage: true # Contents of RawHub's own item storage barrels (needs itemStorage)
+      customItemStorage: true # Contents of custom storage blocks, such as RawHub's barrels and the storage of CraftEngine, Nexo, Oraxen and ItemsAdderAdditions (needs itemStorage)
       # A block's custom name (Vacuum Chest, Filter Hopper, barrels, ...) instead of the vanilla one. Also the name of
       # other plugins' custom blocks, such as CraftEngine's (see pushCustomBlockNames above).
       # Only sent while Jade also asks about the block, for example for its contents.
@@ -106,7 +107,7 @@ modCompat:
       entityItemStorage: true # Contents of minecart chests, hopper minecarts and chest boats
       mobHealth: true # Health bar of living entities
       animalOwner: true # Pet owner name
-      customItemStorage: true # Contents of RawHub's own item storage barrels (needs itemStorage)
+      customItemStorage: true # Contents of custom storage blocks, such as RawHub's barrels and the storage of CraftEngine, Nexo, Oraxen and ItemsAdderAdditions (needs itemStorage)
       customBlockNames: true # A block's custom name instead of the vanilla one
 
   # JEI (Fabric and NeoForge): the server side of recipe transfer and recipe sync.

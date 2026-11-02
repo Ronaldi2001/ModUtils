@@ -7,6 +7,7 @@ import me.ronaldi2001.modutils.nms.ItemWriterCache;
 import me.ronaldi2001.modutils.nms.Nms;
 import me.ronaldi2001.modutils.nms.compat.jade.providers.BlockProviders;
 import me.ronaldi2001.modutils.nms.compat.jade.providers.EntityProviders;
+import me.ronaldi2001.modutils.nms.compat.jade.providers.ItemStorageSupport;
 import me.ronaldi2001.modutils.nms.compat.jade.providers.ServiceStorageSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -68,6 +69,7 @@ public abstract class JadeCompatBase extends ModCompat implements PluginMessageL
 	private final ItemWriterCache itemWriters;
 	private long minRequestIntervalNanos;
 	protected boolean debug;
+	private static final String JADE_ITEM_STORAGE = "minecraft:item_storage";
 	/** The {@code features} section of the config, or null if it has none. */
 	protected ConfigurationSection features;
 	/** The custom storages that have their items outside vanilla containers. */
@@ -325,7 +327,10 @@ public abstract class JadeCompatBase extends ModCompat implements PluginMessageL
 		// The lookup runs where the player is, not on the network thread; the entity itself is then read on its own thread
 		this.plugin.getScheduler().runOnEntity(player, () -> {
 			Entity target = Nms.level(handle).getEntity(entityId);
-			if (target == null) return;
+			if (target == null) {
+				this.answerForClientOnlyEntity(player, handle, entityId, tag);
+				return;
+			}
 
 			this.plugin.getScheduler().runOnEntity(
 					target.getBukkitEntity(), () -> {
@@ -343,12 +348,40 @@ public abstract class JadeCompatBase extends ModCompat implements PluginMessageL
 	}
 
 	/**
+	 * Some plugins' furniture has hitboxes that clients see as entities the server doesn't have, so a request about one
+	 * would never be answered. Ask the custom storage sources what such an entity holds.
+	 */
+	@SuppressWarnings("resource") // ServerLevel is closeable, but it belongs to the server
+	private void answerForClientOnlyEntity(Player player, ServerPlayer handle, int entityId, CompoundTag tag) {
+		if (this.features != null && !(this.features.getBoolean("entityItemStorage", true) && this.features.getBoolean("customItemStorage", true))) return;
+
+		ServerLevel level = Nms.level(handle);
+		List<net.minecraft.world.item.ItemStack> items = ServiceStorageSource.itemsOfEntity(level.getWorld(), entityId);
+		if (items == null) {
+			// A display on a storage block (a drawer's item): what the player looks at through it is the block
+			org.bukkit.block.Block target = player.getTargetBlockExact(Math.max(1, (int) Math.ceil(handle.blockInteractionRange())));
+			if (target != null) items = ServiceStorageSource.itemsOfBlock(target);
+		}
+		if (items == null) return;
+
+		this.debug("Answering for the client-only entity " + entityId + " with " + items.size() + " stacks");
+		ItemWriter writer = this.itemWriterFor(player);
+		List<net.minecraft.world.item.ItemStack> shown = items;
+		tag.put(JADE_ITEM_STORAGE, BlockCtx.encode(level, buf -> ItemStorageSupport.write(buf, writer, shown)));
+		tag.putInt("EntityId", entityId);
+		this.sendData(player, tag);
+	}
+
+	/**
 	 * Runs the requested block providers, and the ones that answer unasked, for {@link #processBlock}.
 	 */
 	protected Consumer<BlockCtx> runBlockProviders(List<JadeBlockProvider> requested) {
 		return ctx -> {
 			List<JadeBlockProvider> toRun = new ArrayList<>(requested);
-			this.blockProviders.stream().filter(p -> p.alwaysRun() && !requested.contains(p)).forEach(toRun::add);
+			// Jade replaces a block's server data with every message, so the answer carries everything the push does too
+			this.blockProviders.stream()
+					.filter(p -> !toRun.contains(p) && (p.alwaysRun() || ctx.blockEntity() == null && p.pushedWithoutBlockEntity()))
+					.forEach(toRun::add);
 			for (JadeBlockProvider provider : toRun) {
 				try {
 					provider.append(ctx);
@@ -374,7 +407,7 @@ public abstract class JadeCompatBase extends ModCompat implements PluginMessageL
 		};
 	}
 
-	private ItemWriter itemWriterFor(Player player) {
+	protected ItemWriter itemWriterFor(Player player) {
 		return this.itemWriters.forPlayer(player);
 	}
 

@@ -108,7 +108,10 @@ public final class ItemStorageSupport {
 	 * @return null if there is nothing to show
 	 */
 	public static List<ItemStack> entityItems(EntityCtx ctx) {
-		if (!(ctx.entity() instanceof Container container)) return null;
+		if (!(ctx.entity() instanceof Container container)) {
+			// Storage furniture of a plugin: an entity with the items kept elsewhere
+			return ServiceStorageSource.itemsOf(ctx.entity().getBukkitEntity());
+		}
 
 		if (ctx.entity() instanceof ContainerEntity containerEntity && Nms.hasLootTable(containerEntity)) {
 			ctx.tag().putBoolean("Loot", true);
@@ -118,7 +121,7 @@ public final class ItemStorageSupport {
 	}
 
 	/** Writes the stacks as a single view group, the layout Jade's item storage client provider reads. */
-	static void write(RegistryFriendlyByteBuf buf, ItemWriter items, List<ItemStack> stacks) {
+	public static void write(RegistryFriendlyByteBuf buf, ItemWriter items, List<ItemStack> stacks) {
 		Identifier.STREAM_CODEC.encode(buf, JadeIds.ITEM_STORAGE_DEFAULT);
 		buf.writeVarInt(1); // one view group
 		buf.writeVarInt(Math.min(stacks.size(), MAX_STACKS));

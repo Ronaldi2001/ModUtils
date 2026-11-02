@@ -8,7 +8,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -46,7 +45,6 @@ public class JadeCompat extends JadeCompatBase {
 
 	/** How long a pushed name is repeated for the block still looked at, in ticks, in case the client dropped it. */
 	private static final long PUSH_REPEAT_TICKS = 20;
-	private static final Identifier OBJECT_NAME = Identifier.fromNamespaceAndPath("jade", "object_name");
 
 	private final Map<UUID, ScheduledTask> pushTasks = new ConcurrentHashMap<>();
 	private boolean pushBlockNames;
@@ -112,15 +110,15 @@ public class JadeCompat extends JadeCompatBase {
 
 	/**
 	 * Jade only asks the server about a block that has a block entity, so a plugin's custom block (a vanilla block to the
-	 * server) never gets its name looked up. The client takes {@code jade:receive_data} for the block it is looking at
+	 * server) never gets its name or contents looked up. The client takes {@code jade:receive_data} for the block it is looking at
 	 * whether it asked or not, as long as the position in it is that block's. So look at what the player looks at, and
-	 * send the name unasked.
+	 * send them unasked.
 	 */
 	private void startNamePush(Player player, ServerPlayer handle) {
 		if (!this.pushBlockNames || this.pushTasks.containsKey(player.getUniqueId())) return;
 
-		JadeBlockProvider names = this.blockProviders.stream().filter(p -> OBJECT_NAME.equals(p.id())).findFirst().orElse(null);
-		if (names == null) return;
+		List<JadeBlockProvider> pushed = this.blockProviders.stream().filter(JadeBlockProvider::pushedWithoutBlockEntity).toList();
+		if (pushed.isEmpty()) return;
 
 		BlockPos[] last = {null};
 		long[] sentAt = {0};
@@ -149,10 +147,19 @@ public class JadeCompat extends JadeCompatBase {
 			tag.putInt("y", pos.getY());
 			tag.putInt("z", pos.getZ());
 			tag.putString("BlockId", BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
-			names.append(new BlockCtx(handle, level, pos, state, null, false, tag, null));
-			if (!tag.contains(OBJECT_NAME.toString())) return;
+			// x, y, z and BlockId are in it already: anything more is data for the client
+			int basics = tag.size();
+			BlockCtx ctx = new BlockCtx(handle, level, pos, state, null, false, tag, this.itemWriterFor(player));
+			for (JadeBlockProvider provider : pushed) {
+				try {
+					provider.append(ctx);
+				} catch (RuntimeException e) {
+					this.debug("Provider " + provider.id() + " failed while pushing: " + e);
+				}
+			}
+			if (tag.size() == basics) return;
 
-			this.debug("Pushing the name of the block at " + pos.toShortString() + " to " + player.getName());
+			this.debug("Pushing the data of the block at " + pos.toShortString() + " to " + player.getName());
 			this.sendData(player, tag);
 		}, () -> this.pushTasks.remove(player.getUniqueId()), 20, this.pushPeriodTicks);
 		if (task != null) this.pushTasks.put(player.getUniqueId(), task);

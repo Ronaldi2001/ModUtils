@@ -175,6 +175,11 @@ public final class BlockProviders {
 		}
 
 		@Override
+		public boolean pushedWithoutBlockEntity() {
+			return true;
+		}
+
+		@Override
 		public void append(BlockCtx ctx) {
 			List<ItemStack> items = ItemStorageSupport.blockItems(ctx, this.sources);
 			if (items != null) ctx.put(id(), buf -> ItemStorageSupport.write(buf, ctx.items(), items));
@@ -194,6 +199,11 @@ public final class BlockProviders {
 		@Override
 		public String configKey() {
 			return "customBlockNames";
+		}
+
+		@Override
+		public boolean pushedWithoutBlockEntity() {
+			return true;
 		}
 
 		@Override
