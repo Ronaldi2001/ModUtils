@@ -132,6 +132,9 @@ modCompat:
       recipeSync: true
       # Also send the brewing recipes, so JEI lists brewing on 26.3 clients. Needs recipeSync; only 26.3 servers have them
       brewingSync: true
+      # While the server is starting, keep a joining player on the login screen until the recipes are built (a few seconds
+      # after startup), instead of letting them in without recipes. They wait at most 25 seconds. Needs recipeSync.
+      holdJoinsUntilReady: true
     # RECIPE SYNC
     # Sends your server's recipes, custom ones included, to JEI. Works for Fabric and NeoForge clients on 1.21.3 and up.
     # Custom items can't be added to JEI's item list from the server without Polymer. Without Polymer support, every

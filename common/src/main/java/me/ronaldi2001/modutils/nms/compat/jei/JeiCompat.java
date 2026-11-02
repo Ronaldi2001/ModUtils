@@ -26,6 +26,7 @@ import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -108,6 +109,16 @@ public class JeiCompat extends ModCompat implements PluginMessageListener {
 	private volatile boolean serverLoaded;
 
 	private volatile boolean warmUpPending;
+
+	/**
+	 * Opens when the recipes are ready to be sent, which is when a joining player may go on (see {@link #onPreLogin}). Opened
+	 * once the recipes have been built ahead of time, or at once if nothing is being waited for.
+	 */
+	private final java.util.concurrent.CountDownLatch recipesReady = new java.util.concurrent.CountDownLatch(1);
+	/**
+	 * The longest a joining player is kept waiting. The client gives up on a login after 30 seconds.
+	 */
+	private static final long JOIN_WAIT_SECONDS = 25L;
 	private long minRequestIntervalNanos;
 	private boolean debug;
 	private RecipeSync recipeSync;
@@ -163,6 +174,14 @@ public class JeiCompat extends ModCompat implements PluginMessageListener {
 		boolean brewingEnabled = features == null || features.getBoolean("brewingSync", true);
 		RecipeDisplayConfig display = RecipeDisplayConfig.parse(section, this.plugin.getLogger());
 		this.recipeSync = syncEnabled ? new RecipeSync(this.plugin, this.debug, display, this.polymer, this.logRecipeNamespace(CompatNamespaces.recipeNamespace(section)), brewingEnabled) : null;
+		// Until the recipes are built ahead of time (a few seconds after the server has started) a player who joins gets none
+		boolean holdJoins = syncEnabled && (features == null || features.getBoolean("holdJoinsUntilReady", true));
+		if (holdJoins) {
+			// A plugin loaded after the server started never gets the event that starts the build: don't hold anyone for good
+			this.plugin.getScheduler().runAsyncDelayed(this.recipesReady::countDown, 90, java.util.concurrent.TimeUnit.SECONDS);
+		} else {
+			this.recipesReady.countDown();
+		}
 		if (this.debug && syncEnabled) {
 			try {
 				RecipeSelfTest.run(this.plugin.getLogger(), display, SERVER_PROTOCOL);
@@ -253,8 +272,28 @@ public class JeiCompat extends ModCompat implements PluginMessageListener {
 				sync.warmUp(Locale.US);
 			} catch (Throwable e) {
 				this.plugin.getLogger().log(Level.WARNING, "[JEI] Could not build the recipes ahead of time", e);
+			} finally {
+				if (this.recipesReady.getCount() > 0) this.debug("Recipes are ready, players can join");
+				this.recipesReady.countDown();
 			}
 		}, 2, java.util.concurrent.TimeUnit.SECONDS);
+	}
+
+	/**
+	 * Holds a joining player on the login screen until the recipes are ready: one who joins before that is sent the
+	 * recipes late or not at all, and their JEI has none until they rejoin. This event runs off the main thread, so
+	 * waiting here costs the server nothing. After {@link #JOIN_WAIT_SECONDS} the player goes on regardless.
+	 */
+	@EventHandler
+	public void onPreLogin(AsyncPlayerPreLoginEvent event) {
+		if (this.recipesReady.getCount() == 0) return;
+
+		this.debug(event.getName() + " is waiting on the login screen for the recipes");
+		try {
+			this.recipesReady.await(JOIN_WAIT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	/**
