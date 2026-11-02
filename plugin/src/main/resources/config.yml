@@ -48,7 +48,9 @@ modCompat:
   trashSlot:
     enabled: true
     debug: false
-    # Items that cannot be deleted, as item ids (for example minecraft:netherite_ingot).
+    # Items that cannot be deleted, as item ids (for example minecraft:netherite_ingot). Items of ItemsAdder, Nexo, Oraxen
+    # and CraftEngine are listed with their plugin in front (nexo:ruby, oraxen:ruby, itemsadder:namespace:id,
+    # craftengine:default:topaz).
     deletionDenyList: [ ]
 
   # Jade: answers its data requests so the tooltip shows server-side info.

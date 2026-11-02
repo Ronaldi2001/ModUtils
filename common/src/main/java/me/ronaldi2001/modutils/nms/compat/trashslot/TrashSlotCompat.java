@@ -4,6 +4,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import me.ronaldi2001.modutils.ModUtilsPlugin;
 import me.ronaldi2001.modutils.modCompat.api.ModCompat;
+import me.ronaldi2001.modutils.pluginHooks.CustomItemSource;
+import me.ronaldi2001.modutils.pluginHooks.ItemNames;
+import me.ronaldi2001.modutils.translations.Argument;
+import me.ronaldi2001.modutils.translations.TransUtils;
+import net.kyori.adventure.text.Component;
 import me.ronaldi2001.modutils.nms.ItemWriterCache;
 import me.ronaldi2001.modutils.nms.Nms;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -18,6 +23,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.inventory.InventoryOpenEvent;
@@ -30,6 +36,7 @@ import org.bukkit.plugin.messaging.PluginMessageListener;
 import org.jspecify.annotations.NonNull;
 
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -62,7 +69,10 @@ public class TrashSlotCompat extends ModCompat implements PluginMessageListener 
 
 	private final Map<UUID, ItemStack> trash = new ConcurrentHashMap<>();
 	private final ItemWriterCache itemWriters;
+	/** Lower case: item ids, and {@code prefix:id} for the items of ItemsAdder, Nexo, Oraxen and CraftEngine. */
 	private final Set<String> denyList = new HashSet<>();
+	/** Whether the deny list names a custom item, which takes a look at the plugins' items to check against. */
+	private boolean denyCustomItems;
 	private boolean debug;
 
 	public TrashSlotCompat(ModUtilsPlugin plugin) {
@@ -84,7 +94,13 @@ public class TrashSlotCompat extends ModCompat implements PluginMessageListener 
 	public void onEnable(ConfigurationSection section) {
 		this.debug = section.getBoolean("debug", false);
 		this.denyList.clear();
-		this.denyList.addAll(section.getStringList("deletionDenyList"));
+		this.denyCustomItems = false;
+		for (String id : section.getStringList("deletionDenyList")) {
+			String lower = id.trim().toLowerCase(Locale.ROOT);
+			this.denyList.add(lower);
+			// Plugins may load after this, so anything that is not a vanilla id counts
+			if (!lower.startsWith("minecraft:")) this.denyCustomItems = true;
+		}
 
 		Messenger messenger = this.plugin.getServer().getMessenger();
 		for (String channel : INCOMING) messenger.registerIncomingPluginChannel(this.plugin, channel, this);
@@ -198,16 +214,24 @@ public class TrashSlotCompat extends ModCompat implements PluginMessageListener 
 		if (slotNumber < 0 || slotNumber >= menu.slots.size()) return;
 
 		Slot slot = menu.slots.get(slotNumber);
+		ItemStack target = slot.getItem();
+		if (this.denied(target)) this.tellDenied(player, target);
+
+		// The client has already taken the items out of its own view, so whatever is refused has to be sent back
+		boolean refused = true;
 		if (this.take(handle, slot)) {
+			refused = false;
 			if (deleteAll) {
 				ItemStack deleted = this.trash.get(id);
 				for (Slot other : menu.slots) {
 					ItemStack stack = other.getItem();
-					if (!stack.isEmpty() && ItemStack.isSameItemSameComponents(stack, deleted) && !this.take(handle, other)) break;
+					if (stack.isEmpty() || !ItemStack.isSameItemSameComponents(stack, deleted)) continue;
+					if (!this.take(handle, other)) refused = true;
 				}
 			}
 			menu.broadcastChanges();
 		}
+		if (refused) menu.sendAllDataToRemote();
 		this.sendContent(player);
 	}
 
@@ -237,9 +261,14 @@ public class TrashSlotCompat extends ModCompat implements PluginMessageListener 
 		UUID id = player.getUniqueId();
 		AbstractContainerMenu menu = handle.containerMenu;
 		ItemStack carried = menu.getCarried();
-		// A hand the client sees differently than the server does: leave it, the next sync puts the client right
-		if (carried.isEmpty() != handEmpty) return;
-		if (this.denied(carried)) return;
+		// A hand the client sees differently than the server does, or an item that may not go in: leave it and put the client right
+		if (carried.isEmpty() != handEmpty || this.denied(carried)) {
+			if (this.denied(carried)) this.tellDenied(player, carried);
+			menu.sendAllDataToRemote();
+			// The trash slot is the client's own, so what it shows has to be corrected too
+			this.sendContent(player);
+			return;
+		}
 
 		ItemStack trashed = this.trash.getOrDefault(id, ItemStack.EMPTY);
 		if (carried.isEmpty()) {
@@ -253,13 +282,35 @@ public class TrashSlotCompat extends ModCompat implements PluginMessageListener 
 		}
 	}
 
+	/** Tells the player, in their language, that the item may not be deleted. */
+	private void tellDenied(Player player, ItemStack stack) {
+		org.bukkit.inventory.ItemStack bukkit = CraftItemStack.asBukkitCopy(stack);
+		Component name = ItemNames.of(bukkit);
+		if (name == null) name = Component.translatable(stack.getItem().getDescriptionId());
+		this.plugin.getPlatform().send(player, TransUtils.translatableManual(player, "trashSlot.denied", Argument.component("item", name)));
+	}
+
 	private void store(UUID id, ItemStack stack) {
 		if (stack.isEmpty()) this.trash.remove(id);
 		else this.trash.put(id, stack);
 	}
 
+	/**
+	 * Whether the stack is on the deny list, by its vanilla id or, for a custom item, by the id its plugin gives it
+	 * ({@code nexo:ruby}, {@code itemsadder:ns:id}, ...). A custom item is also denied through the vanilla item it is
+	 * made of.
+	 */
 	private boolean denied(ItemStack stack) {
-		return !stack.isEmpty() && this.denyList.contains(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+		if (stack.isEmpty() || this.denyList.isEmpty()) return false;
+		if (this.denyList.contains(BuiltInRegistries.ITEM.getKey(stack.getItem()).toString())) return true;
+		if (!this.denyCustomItems) return false;
+
+		org.bukkit.inventory.ItemStack bukkit = CraftItemStack.asBukkitCopy(stack);
+		for (CustomItemSource source : this.plugin.getItemSources()) {
+			String id = source.itemId(bukkit);
+			if (id != null && this.denyList.contains((source.prefix() + ":" + id).toLowerCase(Locale.ROOT))) return true;
+		}
+		return false;
 	}
 
 	private void sendContent(Player player) {

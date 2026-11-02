@@ -148,3 +148,8 @@ updateChecker:
   #   <latest>   the newer version on Modrinth
   #   <url>      the page of the newer version
   available: "<gold>Mod Utils <yellow><latest> <gold>is out, you have <yellow><current><gold>. <green><u>Click to download"
+
+trashSlot:
+  # Sent when a player tries to trash an item on the deletionDenyList. Placeholders:
+  #   <item>  the name of the item
+  denied: "<red><item> <red>can not be trashed."
