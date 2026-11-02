@@ -130,6 +130,8 @@ modCompat:
       recipeTransfer: true
       # Send the server's recipes to JEI on the clients (see below)
       recipeSync: true
+      # Also send the brewing recipes, so JEI lists brewing on 26.3 clients. Needs recipeSync; only 26.3 servers have them
+      brewingSync: true
     # RECIPE SYNC
     # Sends your server's recipes, custom ones included, to JEI. Works for Fabric and NeoForge clients on 1.21.3 and up.
     # Custom items can't be added to JEI's item list from the server without Polymer. Without Polymer support, every

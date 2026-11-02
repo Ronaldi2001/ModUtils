@@ -160,8 +160,9 @@ public class JeiCompat extends ModCompat implements PluginMessageListener {
 		ConfigurationSection features = section.getConfigurationSection("features");
 		this.transferEnabled = features == null || features.getBoolean("recipeTransfer", true);
 		boolean syncEnabled = features == null || features.getBoolean("recipeSync", true);
+		boolean brewingEnabled = features == null || features.getBoolean("brewingSync", true);
 		RecipeDisplayConfig display = RecipeDisplayConfig.parse(section, this.plugin.getLogger());
-		this.recipeSync = syncEnabled ? new RecipeSync(this.plugin, this.debug, display, this.polymer, this.logRecipeNamespace(CompatNamespaces.recipeNamespace(section))) : null;
+		this.recipeSync = syncEnabled ? new RecipeSync(this.plugin, this.debug, display, this.polymer, this.logRecipeNamespace(CompatNamespaces.recipeNamespace(section)), brewingEnabled) : null;
 		if (this.debug && syncEnabled) {
 			try {
 				RecipeSelfTest.run(this.plugin.getLogger(), display, SERVER_PROTOCOL);

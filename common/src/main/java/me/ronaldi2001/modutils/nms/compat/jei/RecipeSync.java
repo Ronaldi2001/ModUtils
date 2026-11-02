@@ -71,6 +71,12 @@ final class RecipeSync {
 	}
 
 	/**
+	 * The brewing recipe serializer and type of 26.3. Older versions have none: their clients build brewing themselves.
+	 */
+	private static final String BREWING_SERIALIZER = "minecraft:brewing";
+	private static final String BREWING_TYPE = "minecraft:brewing";
+
+	/**
 	 * The recipe types JEI asks a NeoForge server for. Other recipes are left out of the payload.
 	 */
 	private static final List<RecipeType<?>> NEOFORGE_TYPES = List.of(
@@ -83,8 +89,8 @@ final class RecipeSync {
 	 * as registry ids, so they are the client's own numbering and not the server's, and have to be spelled out.
 	 * <p>
 	 * Read from the registration order in the client jars. These are the same on all three versions: 26.3's added
-	 * brewing serializer and type come after the ones listed here. Entries a mod adds to the registries come after the
-	 * vanilla ones, so they don't move these.
+	 * brewing serializer and type come after the ones listed here (and are listed too, for 26.3 only). Entries a mod
+	 * adds to the registries come after the vanilla ones, so they don't move these.
 	 */
 	private static final Map<String, Integer> SERIALIZER_IDS_26 = Map.of(
 			"minecraft:crafting_shaped", 0,
@@ -110,7 +116,9 @@ final class RecipeSync {
 			"minecraft:smoking", 16,
 			"minecraft:campfire_cooking", 17,
 			"minecraft:stonecutting", 18,
-			"minecraft:smithing_transform", 19
+			"minecraft:smithing_transform", 19,
+			// Only exists on 26.3, where it follows smithing_transform
+			BREWING_SERIALIZER, 20
 	);
 	private static final Map<String, Integer> TYPE_IDS_26 = Map.of(
 			"minecraft:crafting", 0,
@@ -119,7 +127,9 @@ final class RecipeSync {
 			"minecraft:smoking", 3,
 			"minecraft:campfire_cooking", 4,
 			"minecraft:stonecutting", 5,
-			"minecraft:smithing", 6
+			"minecraft:smithing", 6,
+			// Only exists on 26.3, where it follows smithing
+			BREWING_TYPE, 7
 	);
 
 	/**
@@ -137,13 +147,22 @@ final class RecipeSync {
 	private final RecipeDisplayConfig display;
 	private final PolymerHook polymer;
 	private final @Nullable String recipeNamespace;
+	/**
+	 * Whether 26.3's brewing recipes are sent (the {@code brewingSync} feature).
+	 */
+	private final boolean brewing;
 
 	private final Map<String, byte[]> cache = new ConcurrentHashMap<>();
 	private volatile int cachedRecipeCount = -1;
+	/**
+	 * The server's potion mixes (see {@link BrewingMixes}), read when first needed and again after a reload.
+	 */
+	private volatile @Nullable List<BrewingRecipes.Mix> mixes;
 
 	RecipeSync(ModUtilsPlugin plugin, boolean debug, RecipeDisplayConfig display, PolymerHook polymer,
-			   @Nullable String recipeNamespace) {
+			   @Nullable String recipeNamespace, boolean brewing) {
 		this.plugin = plugin;
+		this.brewing = brewing;
 		this.polymer = polymer;
 		this.recipeNamespace = recipeNamespace;
 		this.debug = debug;
@@ -153,6 +172,38 @@ final class RecipeSync {
 	void invalidate() {
 		this.cache.clear();
 		this.cachedRecipeCount = -1;
+		this.mixes = null;
+	}
+
+	/**
+	 * The brewing recipes to add for this client: the ones written from the server's potion mixes, for a 26.3 client on an
+	 * older server (see {@link RecipeTranscoder#brewingFor}). None if brewing sync is off.
+	 */
+	private List<BrewingRecipes.Encoded> syntheticBrewing(RecipeTranscoder transcoder) {
+		if (!this.brewing) return List.of();
+
+		List<BrewingRecipes.Encoded> recipes = transcoder.brewingFor(this.potionMixes());
+		if (!recipes.isEmpty()) this.debug("Writing " + recipes.size() + " brewing recipes for a 26.3 client");
+		return recipes;
+	}
+
+	private List<BrewingRecipes.Mix> potionMixes() {
+		List<BrewingRecipes.Mix> current = this.mixes;
+		if (current == null) {
+			current = BrewingMixes.collect();
+			this.mixes = current;
+			this.debug("Found " + current.size() + " brewing steps in the server's potion mixes");
+		}
+		return current;
+	}
+
+	/**
+	 * A recipe id for a recipe written from a potion mix, in the recipe namespace if one is configured.
+	 */
+	private String syntheticId(String path) {
+		return this.recipeNamespace == null
+				? VANILLA_NAMESPACE + ":" + path
+				: this.recipeNamespace + ":" + VANILLA_NAMESPACE + "/" + path;
 	}
 
 	/**
@@ -177,6 +228,8 @@ final class RecipeSync {
 			if (this.payload(platform, server.getRecipeManager(), server.registryAccess(), layout, null, locale,
 					platform + ":" + protocol + ":" + locale, false, false) != null) built++;
 		}
+		// Only to see in the log what the server's brewing comes to; the payloads read it themselves when they need it
+		if (this.debug && this.brewing) this.potionMixes();
 		this.debug("Built " + built + " recipe payloads ahead of time in " + (System.nanoTime() - start) / 1_000_000L + " ms");
 	}
 
@@ -276,6 +329,11 @@ final class RecipeSync {
 			List<byte[]> encoded = this.encodeRecipes(serializerId, group.getValue(), registryAccess, transcoder);
 			if (!encoded.isEmpty()) entries.add(new Entry(serializerId, encoded));
 		}
+		List<byte[]> brewing = new ArrayList<>();
+		for (BrewingRecipes.Encoded recipe : this.syntheticBrewing(transcoder)) {
+			brewing.add(this.withId(registryAccess, this.syntheticId(recipe.path()), recipe.body()));
+		}
+		if (!brewing.isEmpty()) entries.add(new Entry(BREWING_SERIALIZER, brewing));
 		entries.sort(Comparator.comparing(Entry::serializerId));
 
 		RegistryFriendlyByteBuf out = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess);
@@ -306,10 +364,11 @@ final class RecipeSync {
 		// A client on the server's own version uses the server's registry ids; any other has its own numbering
 		boolean serverIds = transcoder.sameVersion();
 		Map<String, Integer> clientSerializerIds = layout.usesTemplates() ? SERIALIZER_IDS_26 : SERIALIZER_IDS_1_21;
+		List<RecipeType<?>> types = this.neoForgeTypes(layout);
 		List<byte[]> encoded = new ArrayList<>();
 		all.stream()
 				.filter(this::isSyncable)
-				.filter(holder -> NEOFORGE_TYPES.contains(holder.value().getType()))
+				.filter(holder -> types.contains(holder.value().getType()))
 				.sorted(Comparator.comparing(holder -> Nms.recipeId(holder).toString()))
 				.forEach(holder -> {
 					RecipeSerializer<?> serializer = holder.value().getSerializer();
@@ -341,10 +400,19 @@ final class RecipeSync {
 					}
 				});
 
+		// Brewing written from the server's potion mixes: a 26.3 client with a server that has none of its own, so the
+		// client's numbering is used for the serializer and the type
+		List<BrewingRecipes.Encoded> brewing = this.syntheticBrewing(transcoder);
+		for (BrewingRecipes.Encoded recipe : brewing) {
+			encoded.add(this.withSerializer(registryAccess, this.syntheticId(recipe.path()),
+					SERIALIZER_IDS_26.get(BREWING_SERIALIZER), recipe.body()));
+		}
+
 		RegistryFriendlyByteBuf out = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess);
 		try {
-			out.writeVarInt(NEOFORGE_TYPES.size());
-			for (RecipeType<?> type : NEOFORGE_TYPES) out.writeVarInt(this.typeId(type, serverIds));
+			out.writeVarInt(types.size() + (brewing.isEmpty() ? 0 : 1));
+			for (RecipeType<?> type : types) out.writeVarInt(this.typeId(type, serverIds));
+			if (!brewing.isEmpty()) out.writeVarInt(TYPE_IDS_26.get(BREWING_TYPE));
 			out.writeVarInt(encoded.size());
 			encoded.forEach(out::writeBytes);
 			byte[] bytes = new byte[out.readableBytes()];
@@ -353,6 +421,45 @@ final class RecipeSync {
 		} finally {
 			out.release();
 		}
+	}
+
+	/**
+	 * A recipe body behind its id.
+	 */
+	private byte[] withId(RegistryAccess registryAccess, String id, byte[] body) {
+		return this.withSerializer(registryAccess, id, -1, body);
+	}
+
+	/**
+	 * A recipe body behind its id and, with NeoForge, the serializer's registry id (a negative one is left out).
+	 */
+	private byte[] withSerializer(RegistryAccess registryAccess, String id, int serializer, byte[] body) {
+		RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), registryAccess);
+		try {
+			// An id is written as the text namespace:path on every version
+			buf.writeUtf(id);
+			if (serializer >= 0) buf.writeVarInt(serializer);
+			buf.writeBytes(body);
+			byte[] bytes = new byte[buf.readableBytes()];
+			buf.readBytes(bytes);
+			return bytes;
+		} finally {
+			buf.release();
+		}
+	}
+
+	/**
+	 * @return the recipe types in a NeoForge payload: the usual ones, and for a 26.3 client the brewing type too, if the
+	 * server has it (26.3 only; found by name as older versions don't have it)
+	 */
+	private List<RecipeType<?>> neoForgeTypes(RecipeTranscoder.Layout layout) {
+		if (layout != RecipeTranscoder.Layout.V26_3 || !this.brewing) return NEOFORGE_TYPES;
+
+		List<RecipeType<?>> types = new ArrayList<>(NEOFORGE_TYPES);
+		for (RecipeType<?> type : BuiltInRegistries.RECIPE_TYPE) {
+			if (BREWING_TYPE.equals(String.valueOf(BuiltInRegistries.RECIPE_TYPE.getKey(type)))) types.add(type);
+		}
+		return types;
 	}
 
 	/**
@@ -456,10 +563,12 @@ final class RecipeSync {
 	}
 
 	/**
-	 * Special recipes (armor dyeing, map cloning, ...) and recipes with an empty ingredient crash the client.
+	 * Special recipes (armor dyeing, map cloning, ...) and recipes with an empty ingredient crash the client. Brewing
+	 * recipes (26.3 on) are marked special as well, but they are what JEI lists brewing from.
 	 */
 	private boolean isSyncable(RecipeHolder<?> holder) {
 		Recipe<?> recipe = holder.value();
+		if (BREWING_SERIALIZER.equals(this.serializerId(recipe.getSerializer()))) return this.brewing;
 		return !recipe.isSpecial() && !Nms.hasEmptyIngredient(recipe);
 	}
 

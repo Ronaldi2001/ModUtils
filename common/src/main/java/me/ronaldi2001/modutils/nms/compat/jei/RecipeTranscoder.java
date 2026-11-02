@@ -95,6 +95,7 @@ final class RecipeTranscoder {
 	}
 
 	private static final int PROTOCOL_26_3 = 777;
+	private static final String BREWING_SERIALIZER = "minecraft:brewing";
 	private static final Set<String> SUPPORTED_SERIALIZERS = Set.of(
 			"minecraft:crafting_shaped", "minecraft:crafting_shapeless", "minecraft:crafting_transmute",
 			"minecraft:smelting", "minecraft:blasting", "minecraft:smoking", "minecraft:campfire_cooking",
@@ -155,8 +156,17 @@ final class RecipeTranscoder {
 	}
 
 	/**
+	 * @return the brewing recipes a 26.3 client needs from a server that is on an older version, written from the
+	 * server's potion mixes; none for any other client, which has brewing already or gets the server's recipes as they are
+	 */
+	List<BrewingRecipes.Encoded> brewingFor(List<BrewingRecipes.Mix> mixes) {
+		if (this.layout != Layout.V26_3 || this.items == null) return List.of();
+		return BrewingRecipes.encode(mixes, this.items);
+	}
+
+	/**
 	 * @param serializerId the recipe serializer, e.g. {@code minecraft:crafting_shaped}
-	 * @param serverBytes  the recipe as encoded by the server's own codec (without its id)
+	 * @param serverBytes the recipe as encoded by the server's own codec (without its id)
 	 * @param custom       whether this recipe is a custom one (not in the minecraft namespace)
 	 * @return the recipe in the client's layout, or null if it can't be represented
 	 */
@@ -203,6 +213,8 @@ final class RecipeTranscoder {
 	private byte @Nullable [] native26(String serializerId, byte[] src, RegistryAccess registryAccess, boolean custom,
 									   Recipe<?> recipe, String recipeKey) {
 		this.currentRecipe = recipeKey;
+		// Brewing recipes are all potions and vanilla items, the same on both ends
+		if (BREWING_SERIALIZER.equals(serializerId)) return src;
 		if (!SUPPORTED_SERIALIZERS.contains(serializerId)) return null;
 		if (this.polymer == null && !custom) return src;
 
