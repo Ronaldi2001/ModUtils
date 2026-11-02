@@ -11,6 +11,7 @@ and are packed into the plugin jar under `licenses/`.
 | [AppleSkin](https://github.com/squeek502/AppleSkin) (squeek502) | Unlicense (public domain) | Sends the same `appleskin:saturation` / `appleskin:exhaustion` payloads. No conditions. |
 | [The One Probe](https://github.com/McJtyMods/TheOneProbe) (McJty) | MIT, Copyright (c) 2016 McJty | Writes the same `theoneprobe:*` packets and element layouts (`compat/top`), read from TOP's source. The MIT notice stays with it. No TOP jar is bundled. |
 | [Polymer](https://github.com/Patbox/polymer) (Patbox) | LGPL-3.0 | The client handshake and sync protocol (`compat/polymer`) uses the same channel names, packet layouts and version numbers as Polymer. The code is independent: it runs on Netty and Bukkit, not Fabric API, and shares no code with Polymer. No Polymer jar is bundled. |
+| [TrashSlot](https://github.com/TwelveIterations/TrashSlot) (BlayTheNinth) | All Rights Reserved | Uses the same `trashslot:*` channels and packet layouts (`compat/trashslot`), read from its source for compatibility. No TrashSlot code or jar is included. |
 
 "Minecraft" is a trademark of Mojang AB; this plugin is not affiliated with or endorsed by Mojang, Microsoft or the
 authors above.

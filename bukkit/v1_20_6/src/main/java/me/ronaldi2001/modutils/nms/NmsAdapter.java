@@ -9,6 +9,7 @@ import me.ronaldi2001.modutils.nms.modBlock.NmsModBlockBridge;
 import me.ronaldi2001.modutils.nms.compat.jade.Jade1205Compat;
 
 import me.ronaldi2001.modutils.nms.compat.top.TopCompat;
+import me.ronaldi2001.modutils.nms.compat.trashslot.TrashSlotCompat;
 
 import java.util.List;
 
@@ -23,7 +24,8 @@ public final class NmsAdapter implements VersionAdapter {
 		return List.of(
 				new AppleSkinCompat(plugin),
 				new Jade1205Compat(plugin),
-				new TopCompat(plugin)
+				new TopCompat(plugin),
+				new TrashSlotCompat(plugin)
 		);
 	}
 

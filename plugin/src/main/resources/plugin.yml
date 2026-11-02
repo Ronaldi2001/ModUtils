@@ -4,7 +4,7 @@ version: '${version}'
 main: me.ronaldi2001.modutils.ModUtilsPlugin
 api-version: '1.20'
 folia-supported: true
-description: Server-side support for client mods (JEI and Polymer from 1.21.3, Jade, The One Probe, AppleSkin) on Minecraft 1.20.5 to 26.3
+description: Server-side support for client mods (JEI and Polymer from 1.21.3, Jade, The One Probe, AppleSkin, TrashSlot) on Minecraft 1.20.5 to 26.3
 authors: [ Ronaldi2001 ]
 
 # Spigot has no Adventure: the server downloads it on first start

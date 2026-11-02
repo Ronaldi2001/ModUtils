@@ -1,7 +1,7 @@
 # Mod Utils: server-side tools for Minecraft servers.
 #
 #   mods       Display names of client mods, used in /modutils and on the kick screen
-#   modCompat  Server-side support for client mods (AppleSkin, Jade, The One Probe, JEI, Polymer)
+#   modCompat  Server-side support for client mods (AppleSkin, Jade, The One Probe, JEI, Polymer, TrashSlot)
 #   modBlock   Kicks players whose client has mods you don't want
 #   updateChecker  Tells admins when a newer version is on Modrinth
 #
@@ -16,6 +16,7 @@ mods:
   jade: Jade🔍
   jei: JEI
   appleskin: AppleSkin
+  trashslot: TrashSlot
   polymer: Polymer
   top: TheOneProbe
   journeymap: Journey Map
@@ -41,6 +42,14 @@ modCompat:
     # Higher means less network and CPU use but slower overlay updates. AppleSkin's own default is 1 (every tick).
     # Nothing is sent to the client unless it differs from the last sync.
     syncIntervalTicks: 10
+
+  # TrashSlot: keeps the item in each player's trash slot so it can be taken back, and deletes items on request.
+  # Deleting works on the player's own inventory and the crafting grid only, never on the slots of another plugin's GUI.
+  trashSlot:
+    enabled: true
+    debug: false
+    # Items that cannot be deleted, as item ids (for example minecraft:netherite_ingot).
+    deletionDenyList: [ ]
 
   # Jade: answers its data requests so the tooltip shows server-side info.
   jade:

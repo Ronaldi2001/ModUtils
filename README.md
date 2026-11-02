@@ -26,6 +26,7 @@ One jar runs on **Paper, Folia, Purpur, Spigot and CraftBukkit**, from **1.20.5 
 | [Jade](https://modrinth.com/mod/jade) | 1.20.5 or newer | 1.20.5 or newer |
 | [The One Probe](https://modrinth.com/mod/the-one-probe) | 1.20.5 or newer | 1.20.5 or newer |
 | [AppleSkin](https://modrinth.com/mod/appleskin) | 1.20.5 or newer | 1.20.5 or newer |
+| [TrashSlot](https://modrinth.com/mod/trashslot) | 1.20.5 or newer | 1.20.6 or newer |
 | [JEI](https://modrinth.com/mod/jei) | **1.21.3 or newer** | **1.21.3 or newer** |
 | [Polymer](https://modrinth.com/mod/polymer) | **1.21.3 or newer** | **1.21.3 or newer** |
 
@@ -46,6 +47,7 @@ Each mod can be switched on or off in `config.yml`, and only does something for 
 | Jade | Furnace and brewing progress, beehives, jukeboxes, chest, barrel and shulker contents, mob growth and breeding timers, pet owners, custom block names |
 | The One Probe | Crop growth, furnaces, brewing stands, storage contents, mob health, pet owners |
 | AppleSkin | Accurate saturation and exhaustion in the hunger overlay |
+| TrashSlot | Items in the trash slot can be taken back, and deleting works on the server |
 | JEI | The + button recipe transfer, and sending your server's recipes, custom ones included |
 | Polymer | Custom items show properly in JEI recipes, and operators see them in the creative tab |
 
