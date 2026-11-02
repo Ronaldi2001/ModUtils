@@ -46,6 +46,8 @@ tasks {
             dependsOn(adapterJar)
             from(zipTree(adapterJar)) { exclude("META-INF/**") }
         }
+        // Moved into our package so it can't clash with another plugin that packs its own bStats
+        relocate("org.bstats", "me.ronaldi2001.modutils.libs.bstats")
         manifest {
             // Tells Paper the plugin is already Mojang-mapped, so it is never remapped
             attributes("paperweight-mappings-namespace" to "mojang")

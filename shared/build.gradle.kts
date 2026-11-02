@@ -4,6 +4,8 @@ plugins {
 
 dependencies {
     api(project(":api"))
+    // Anonymous usage statistics (https://bstats.org). Packed into the jar and moved to our own package by the plugin module.
+    implementation("org.bstats:bstats-bukkit:3.2.1")
     // Bukkit API only: nothing in here may touch Minecraft internals, so one build runs on every version.
     // 1.21.11's API is the oldest we support; newer servers keep it working.
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")

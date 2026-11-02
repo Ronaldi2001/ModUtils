@@ -4,6 +4,7 @@
 #   modCompat  Server-side support for client mods (AppleSkin, Jade, The One Probe, JEI, Polymer, TrashSlot)
 #   modBlock   Kicks players whose client has mods you don't want
 #   updateChecker  Tells admins when a newer version is on Modrinth
+#   metrics    Anonymous usage statistics sent to bStats
 #
 # Change a setting in game with /modutils set <path> <value>, or edit this file and run /modutils reload.
 
@@ -237,3 +238,12 @@ updateChecker:
   intervalHours: 24
   # How many seconds after joining a player is told, so the message comes after the other join messages; 0 tells them at once
   joinDelaySeconds: 0
+
+# ---------------------------------------------------------------------------------------------------------------------
+# METRICS
+# Sends anonymous usage statistics (server software and version, player count, ...) to https://bstats.org, which
+# shows them on this plugin's public page. Server owners can also switch bStats off for every plugin in
+# plugins/bStats/config.yml. Takes effect when the server starts.
+# ---------------------------------------------------------------------------------------------------------------------
+metrics:
+  enabled: true

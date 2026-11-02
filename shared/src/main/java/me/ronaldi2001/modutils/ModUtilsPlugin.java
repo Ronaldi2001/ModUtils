@@ -19,6 +19,7 @@ import me.ronaldi2001.modutils.platform.Platform;
 import me.ronaldi2001.modutils.translations.LangFileMerger;
 import me.ronaldi2001.modutils.translations.TransUtils;
 import me.ronaldi2001.modutils.updates.UpdateCheckerModule;
+import org.bstats.bukkit.Metrics;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import org.bukkit.configuration.Configuration;
@@ -46,6 +47,8 @@ import java.util.logging.Level;
  */
 public final class ModUtilsPlugin extends JavaPlugin {
 	public static final String PREFIX = "modutils";
+	/** The id of this plugin on bstats.org */
+	private static final int BSTATS_ID = 35093;
 
 	private final List<FeatureModule> modules = new ArrayList<>();
 	private Platform platform;
@@ -219,6 +222,8 @@ public final class ModUtilsPlugin extends JavaPlugin {
 		this.platform = this.loadPlatform();
 		this.syncConfig();
 		TransUtils.load(this);
+		// Server owners can also switch it off for every plugin in plugins/bStats/config.yml
+		if (this.getConfig().getBoolean("metrics.enabled", true)) new Metrics(this, BSTATS_ID);
 
 		this.viaVersionHook = ViaVersionHook.load(this);
 		this.bedrockHook = BedrockHook.load(this);
