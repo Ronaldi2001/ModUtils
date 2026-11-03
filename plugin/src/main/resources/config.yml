@@ -1,7 +1,7 @@
 # Mod Utils: server-side tools for Minecraft servers.
 #
 #   mods       Display names of client mods, used in /modutils and on the kick screen
-#   modCompat  Server-side support for client mods (AppleSkin, Jade, The One Probe, JEI, Polymer, TrashSlot)
+#   modCompat  Server-side support for client mods (AppleSkin, Jade, The One Probe, JEI, Polymer, TrashSlot, ShulkerBoxTooltip)
 #   modBlock   Kicks players whose client has mods you don't want
 #   updateChecker  Tells admins when a newer version is on Modrinth
 #   metrics    Anonymous usage statistics sent to bStats
@@ -14,12 +14,16 @@
 # A mod without an entry is shown by its id.
 # ---------------------------------------------------------------------------------------------------------------------
 mods:
+  # Compat
   jade: Jade🔍
   jei: JEI
   appleskin: AppleSkin
   trashslot: TrashSlot
+  shulkerboxtooltip: ShulkerBoxTooltip
   polymer: Polymer
   top: TheOneProbe
+
+  # Blocking
   journeymap: Journey Map
   xaerominimap: Xaero's Minimap
   sodium: Sodium
@@ -53,6 +57,16 @@ modCompat:
     # and CraftEngine are listed with their plugin in front (nexo:ruby, oraxen:ruby, itemsadder:namespace:id,
     # craftengine:default:topaz).
     deletionDenyList: [ ]
+
+  # ShulkerBoxTooltip: sends each player's ender chest, so hovering over an ender chest item previews what is in it.
+  # Shulker boxes and other containers need nothing from the server.
+  shulkerBoxTooltip:
+    enabled: true
+    debug: false
+    # How the ender chest is kept up to date on the client:
+    #   ACTIVE   sent after every change (and when the player joins or changes world)
+    #   PASSIVE  sent only when the client asks for it, which it does when the player opens a preview
+    enderChestSync: ACTIVE
 
   # Jade: answers its data requests so the tooltip shows server-side info.
   jade:

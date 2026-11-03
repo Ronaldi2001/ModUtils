@@ -9,6 +9,7 @@ import me.ronaldi2001.modutils.nms.modBlock.NmsModBlockBridge;
 import me.ronaldi2001.modutils.nms.compat.jade.JadeCompat;
 import me.ronaldi2001.modutils.nms.compat.jei.JeiCompat;
 import me.ronaldi2001.modutils.nms.compat.polymer.PolymerCompat;
+import me.ronaldi2001.modutils.nms.compat.shulkerboxtooltip.ShulkerBoxTooltipCompat;
 import me.ronaldi2001.modutils.nms.compat.top.TopCompat;
 import me.ronaldi2001.modutils.nms.compat.trashslot.TrashSlotCompat;
 
@@ -27,6 +28,7 @@ public final class NmsAdapter implements VersionAdapter {
 				new JadeCompat(plugin),
 				new TopCompat(plugin),
 				new TrashSlotCompat(plugin),
+				new ShulkerBoxTooltipCompat(plugin),
 				new JeiCompat(plugin)
 		);
 	}

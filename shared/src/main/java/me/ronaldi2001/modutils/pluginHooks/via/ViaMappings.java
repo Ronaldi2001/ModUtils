@@ -1,5 +1,6 @@
 package me.ronaldi2001.modutils.pluginHooks.via;
 
+import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 
 /**
@@ -11,8 +12,11 @@ import java.util.function.IntUnaryOperator;
  * @param customModelDataComponentId id of {@code minecraft:custom_model_data} on the client, or -1
  * @param customModelDataAsInt       true for clients before 1.21.4
  * @param customDataComponentId      id of {@code minecraft:custom_data} on the client, or -1
+ * @param itemNames                  maps a server item id to the name the client knows the item by, such as
+ *                                   {@code minecraft:stone}, or to null if it has none
  */
 public record ViaMappings(IntUnaryOperator itemIds, int itemModelComponentId, int customModelDataComponentId,
 						  boolean customModelDataAsInt, int itemNameComponentId, int customNameComponentId,
-						  int loreComponentId, int customDataComponentId) {
+						  int loreComponentId, int customDataComponentId,
+						  IntFunction<String> itemNames) {
 }

@@ -14,6 +14,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.function.IntFunction;
 import java.util.logging.Level;
 
 public class ViaVersionHook {
@@ -107,11 +108,31 @@ public class ViaVersionHook {
 			}, componentId(chain, "minecraft:item_model"), componentId(chain, "minecraft:custom_model_data"),
 					clientVersion.olderThan(ProtocolVersion.v1_21_4),
 					componentId(chain, "minecraft:item_name"), componentId(chain, "minecraft:custom_name"),
-					componentId(chain, "minecraft:lore"), componentId(chain, "minecraft:custom_data"));
+					componentId(chain, "minecraft:lore"), componentId(chain, "minecraft:custom_data"), itemNames(chain));
 		} catch (Exception e) {
 			this.plugin.getLogger().log(Level.WARNING, "Could not build item translation for " + player.getName(), e);
 			return null;
 		}
+	}
+
+	/**
+	 * Maps a server item id to the name the client knows the item by, or to null if it has none. Names are in the last
+	 * step that has them: a later step that leaves the items alone has none of its own.
+	 */
+	private static IntFunction<String> itemNames(List<MappingData> chain) {
+		FullMappings names = null;
+		for (MappingData mappings : chain.reversed()) {
+			names = mappings.getFullItemMappings();
+			if (names != null) break;
+		}
+		FullMappings clientNames = names;
+		return id -> {
+			for (MappingData mappings : chain) {
+				id = mappings.getNewItemId(id);
+				if (id < 0) return null;
+			}
+			return clientNames == null ? null : clientNames.mappedIdentifier(id);
+		};
 	}
 
 	/**

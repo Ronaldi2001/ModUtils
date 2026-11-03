@@ -24,6 +24,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 
 /**
@@ -47,6 +48,7 @@ public final class ItemTranslator {
 	private final int customNameComponentId;
 	private final int loreComponentId;
 	private final int customDataComponentId;
+	private final IntFunction<String> itemNames;
 	private final @Nullable Locale locale;
 
 	/**
@@ -56,17 +58,19 @@ public final class ItemTranslator {
 	 * @param customModelDataAsInt true for clients before 1.21.4, where custom model data is a single int instead of
 	 *                             the floats/flags/strings/colors record
 	 * @param customDataComponentId the id of {@code minecraft:custom_data} on the client, or -1
+	 * @param itemNames            the name the client knows a server item id by, or null if it has none
 	 */
 	public ItemTranslator(IntUnaryOperator itemIds, int itemModelComponentId, int customModelDataComponentId,
 						  boolean customModelDataAsInt, int itemNameComponentId, int customNameComponentId,
-						  int loreComponentId, int customDataComponentId) {
+						  int loreComponentId, int customDataComponentId, IntFunction<String> itemNames) {
 		this(itemIds, itemModelComponentId, customModelDataComponentId, customModelDataAsInt, itemNameComponentId,
-				customNameComponentId, loreComponentId, customDataComponentId, null);
+				customNameComponentId, loreComponentId, customDataComponentId, itemNames, null);
 	}
 
 	private ItemTranslator(IntUnaryOperator itemIds, int itemModelComponentId, int customModelDataComponentId,
 						   boolean customModelDataAsInt, int itemNameComponentId, int customNameComponentId,
-						   int loreComponentId, int customDataComponentId, @Nullable Locale locale) {
+						   int loreComponentId, int customDataComponentId, IntFunction<String> itemNames,
+						   @Nullable Locale locale) {
 		this.itemIds = itemIds;
 		this.itemModelComponentId = itemModelComponentId;
 		this.customModelDataComponentId = customModelDataComponentId;
@@ -75,6 +79,7 @@ public final class ItemTranslator {
 		this.customNameComponentId = customNameComponentId;
 		this.loreComponentId = loreComponentId;
 		this.customDataComponentId = customDataComponentId;
+		this.itemNames = itemNames;
 		this.locale = locale;
 	}
 
@@ -86,7 +91,7 @@ public final class ItemTranslator {
 	public ItemTranslator withLocale(Locale locale) {
 		return new ItemTranslator(this.itemIds, this.itemModelComponentId, this.customModelDataComponentId,
 				this.customModelDataAsInt, this.itemNameComponentId, this.customNameComponentId, this.loreComponentId,
-				this.customDataComponentId,
+				this.customDataComponentId, this.itemNames,
 				locale);
 	}
 
@@ -105,7 +110,7 @@ public final class ItemTranslator {
 		if (m == null) return null;
 		return new ItemTranslator(m.itemIds(), m.itemModelComponentId(), m.customModelDataComponentId(),
 				m.customModelDataAsInt(), m.itemNameComponentId(), m.customNameComponentId(), m.loreComponentId(),
-				m.customDataComponentId())
+				m.customDataComponentId(), m.itemNames())
 				.withLocale(ServerApi.locale(player));
 	}
 
@@ -114,6 +119,13 @@ public final class ItemTranslator {
 	 */
 	public int translateItemId(int serverId) {
 		return this.itemIds.applyAsInt(serverId);
+	}
+
+	/**
+	 * @return the name the client knows the item by, such as {@code minecraft:stone}, or null if it has none
+	 */
+	public @Nullable String translateItemName(int serverId) {
+		return this.itemNames.apply(serverId);
 	}
 
 	/**
